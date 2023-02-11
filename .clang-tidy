@@ -8,6 +8,8 @@ Checks: >
     -cppcoreguidelines-pro-bounds-constant-array-index,
     -cppcoreguidelines-avoid-non-const-global-variables,
     -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+    -cppcoreguidelines-macro-usage,
   google-*,
     -google-runtime-references,
     -google-readability-todo,
@@ -22,6 +24,7 @@ Checks: >
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
   hicpp-*,
+    -hicpp-no-array-decay,
   cert-*,
     -cert-err58-cpp,
   bugprone-*,
@@ -41,6 +44,8 @@ Checks: >
 # - cert-err58-cpp produces warnings in all tests due to Catch2 library.
 # - cppcoreguidelines-avoid-non-const-global-variables produces warnings in all tests due to Catch2 library.
 # - readability-identifier-length prevent traditional codes.
+# - cppcoreguidelines-pro-bounds-array-to-pointer-decay, hicpp-no-array-decay produces warnings to assert macro in C++ standard.
+# - cppcoreguidelines-macro-usage produces false positives, but no true positives.
 
 CheckOptions:
   # Naming Conventions

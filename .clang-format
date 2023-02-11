@@ -21,4 +21,4 @@ IncludeCategories:
 
 NamespaceMacros: []
 
-CommentPragmas: "\\copydoc|IWYU pragma:"
+CommentPragmas: "\\copydoc|IWYU pragma:|NOLINT"

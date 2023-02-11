@@ -28,6 +28,7 @@
 
 #include "shm_stream/bytes_view.h"
 #include "shm_stream/common_types.h"
+#include "shm_stream/details/atomic_index_pair.h"
 #include "shm_stream/shm_stream_assert.h"
 #include "shm_stream/shm_stream_exception.h"
 
@@ -37,6 +38,8 @@ namespace details {
 /*!
  * \brief Class of writer of queues of bytes without waiting (possibly
  * lock-free).
+ *
+ * \tparam AtomicType Type of atomic variables.
  *
  * \thread_safety All operation is safe if only one writer exists.
  */
@@ -68,7 +71,7 @@ public:
     static constexpr shm_stream_size_t min_size() noexcept { return 2U; }
 
     /*!
-     * \brief
+     * \brief Constructor.
      *
      * \param[in] atomic_next_read_index Atomic variable of the index of the
      * next byte to read.
@@ -76,10 +79,11 @@ public:
      * next byte to write.
      * \param[in] buffer Pointer to the buffer of data.
      */
-    no_wait_bytes_queue_writer(atomic_type* atomic_next_read_index,
-        atomic_type* atomic_next_write_index, mutable_bytes_view buffer)
-        : atomic_next_read_index_(atomic_next_read_index),
-          atomic_next_write_index_(atomic_next_write_index),
+    no_wait_bytes_queue_writer(
+        atomic_index_pair_view<atomic_type> atomic_indices,
+        mutable_bytes_view buffer)
+        : atomic_next_read_index_(&atomic_indices.reader()),
+          atomic_next_write_index_(&atomic_indices.writer()),
           buffer_(buffer.data()),
           size_(buffer.size()),
           next_write_index_(0U),
@@ -170,6 +174,8 @@ public:
 
         atomic_next_write_index_->store(
             next_write_index_, boost::memory_order::release);
+
+        reserved_ = 0U;
     }
 
 private:
