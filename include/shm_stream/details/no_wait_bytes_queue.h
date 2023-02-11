@@ -73,10 +73,8 @@ public:
     /*!
      * \brief Constructor.
      *
-     * \param[in] atomic_next_read_index Atomic variable of the index of the
-     * next byte to read.
-     * \param[in] atomic_next_write_indexAtomic variable of the index of the
-     * next byte to write.
+     * \param[in] atomic_indices Atomic variables of the indices of the next
+     * bytes for the writer and the reader.
      * \param[in] buffer Pointer to the buffer of data.
      */
     no_wait_bytes_queue_writer(
@@ -111,7 +109,11 @@ public:
     //! Move constructor.
     no_wait_bytes_queue_writer(no_wait_bytes_queue_writer&&) noexcept = default;
 
-    //! Move assignment operator.
+    /*!
+     * \brief Move assignment operator.
+     *
+     * \return This.
+     */
     auto operator=(no_wait_bytes_queue_writer&&) noexcept
         -> no_wait_bytes_queue_writer& = default;
 
@@ -182,6 +184,7 @@ private:
     /*!
      * \brief Calculate the number of reservable bytes.
      *
+     * \param[in] next_read_index Value of atomic_next_read_index_.
      * \return Number of reservable bytes.
      */
     [[nodiscard]] shm_stream_size_t calc_reservable_size(

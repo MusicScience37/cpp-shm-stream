@@ -21,4 +21,7 @@
 
 #include <cassert>
 
+/*!
+ * \brief Macro for assertion.
+ */
 #define SHM_STREAM_ASSERT assert
