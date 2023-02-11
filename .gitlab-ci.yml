@@ -49,7 +49,7 @@ line count:
 pre-commit:
   stage: test
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   script:
     - mkdir -p .venv
     - poetry config virtualenvs.in-project true
@@ -170,7 +170,7 @@ static analysis:
   extends: .release-test-base
   stage: test
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     BUILD_DIR: build_static_analysis
@@ -187,7 +187,7 @@ static analysis:
 
 clang coverage:
   extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     BUILD_DIR: build_clang_coverage
     CONAN_STD_CPP_LIB: "libc++"
@@ -272,33 +272,33 @@ gcc-12-bench:
     CONAN_STD_CPP_LIB: "libstdc++11"
     CMAKE_BUILD_TYPE: Release
 
-clang-14-debug:
+clang-13-debug:
   extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
-    BUILD_DIR: build_clang14_debug
+    BUILD_DIR: build_clang13_debug
     CONAN_STD_CPP_LIB: "libc++"
     CMAKE_BUILD_TYPE: Debug
 
-clang-14-release:
+clang-13-release:
   extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
-    BUILD_DIR: build_clang14_release
+    BUILD_DIR: build_clang13_release
     CONAN_STD_CPP_LIB: "libc++"
     CMAKE_BUILD_TYPE: Release
 
-clang-14-bench:
+clang-13-bench:
   extends: .bench-base
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
-    BUILD_DIR: build_clang14_bench
+    BUILD_DIR: build_clang13_bench
     CONAN_STD_CPP_LIB: "libc++"
     CMAKE_BUILD_TYPE: Release
 
-clang-14-asan-ubsan:
+clang-13-asan-ubsan:
   extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     BUILD_DIR: build_clang_asan_ubsan
     ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
@@ -316,10 +316,10 @@ clang-14-asan-ubsan:
     - ctest -V
 
 # TODO
-.clang-14-conan:
+.clang-13-conan:
   extends: .retry setting
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     CONAN_CHANNEL: "testing"
   script:
@@ -333,11 +333,11 @@ clang-14-asan-ubsan:
   interruptible: true
 
 # TODO
-.clang-14-conan-release:
+.clang-13-conan-release:
   extends: .retry setting
   stage: deploy
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     CONAN_CHANNEL: "stable"
   script:
@@ -444,7 +444,7 @@ doc:
   extends: .release-test-base
   stage: test
   needs: []
-  image: musicscience37/sphinx-doxygen:clang14
+  image: musicscience37/sphinx-doxygen:clang13
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     CMAKE_BUILD_TYPE: Release
