@@ -23,7 +23,7 @@
 #define SHM_STREAM_VERSION_MAJOR 0
 
 //! Minor version of this project.
-#define SHM_STREAM_VERSION_MINOR 9
+#define SHM_STREAM_VERSION_MINOR 1
 
 //! Patch version of this project.
 #define SHM_STREAM_VERSION_PATCH 0
