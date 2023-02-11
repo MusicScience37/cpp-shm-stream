@@ -1,0 +1,33 @@
+{
+  "build": { "dockerfile": "Dockerfile" },
+  "containerEnv": {
+    "ASAN_OPTIONS": "alloc_dealloc_mismatch=0",
+    "CCACHE_COMPILERCHECK": "content"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "twxs.cmake",
+        "ms-vscode.cmake-tools",
+        "cheshirekow.cmake-format",
+        "streetsidesoftware.code-spell-checker",
+        "cschlosser.doxdocgen",
+        "davidanson.vscode-markdownlint",
+        "jebbs.plantuml",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "cmakeFormat.exePath": "/workspaces/cpp-shm-stream/.venv/bin/cmake-format",
+        "plantuml.jar": "/usr/local/plantuml/plantuml.jar"
+      }
+    }
+  },
+  "postCreateCommand": "bash ./.devcontainer/setup.bash"
+}
