@@ -24,6 +24,7 @@
 #include <boost/atomic/ipc_atomic.hpp>
 
 #include "shm_stream/common_types.h"
+#include "shm_stream/details/cache_line_size.h"
 #include "shm_stream/shm_stream_assert.h"
 
 namespace shm_stream {
@@ -66,10 +67,10 @@ public:
 
 private:
     //! Index of the writer.
-    atomic_type writer_index_{0U};
+    alignas(cache_line_size()) atomic_type writer_index_{0U};
 
     //! Index of the reader.
-    atomic_type reader_index_{0U};
+    alignas(cache_line_size()) atomic_type reader_index_{0U};
 };
 
 /*!
