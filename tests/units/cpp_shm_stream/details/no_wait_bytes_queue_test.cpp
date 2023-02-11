@@ -36,8 +36,6 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
     using atomic_type = boost::atomics::ipc_atomic<shm_stream_size_t>;
     using atomic_index_pair_type =
         shm_stream::details::atomic_index_pair<atomic_type>;
-    using atomic_index_pair_view_type =
-        shm_stream::details::atomic_index_pair_view<atomic_type>;
     using writer_type = no_wait_bytes_queue_writer<atomic_type>;
 
     SECTION("check size in constructor") {
@@ -56,64 +54,57 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
     }
 
     SECTION("get available size") {
-        atomic_type read_index{0U};
-        atomic_type write_index{0U};
+        atomic_index_pair_type indices;
         constexpr shm_stream_size_t buffer_size = 7U;
         std::array<char, buffer_size> raw_buffer{};
 
         SECTION("when no byte is written") {
-            read_index = 1U;
-            write_index = 1U;
+            indices.reader() = 1U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             CHECK(writer.available_size() == 6U);  // NOLINT
         }
 
         SECTION("when one byte is written") {
-            read_index = 1U;
-            write_index = 2U;
+            indices.reader() = 1U;
+            indices.writer() = 2U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             CHECK(writer.available_size() == 5U);  // NOLINT
         }
 
         SECTION("when some bytes are written") {
-            read_index = 2U;
-            write_index = 6U;  // NOLINT
+            indices.reader() = 2U;
+            indices.writer() = 6U;  // NOLINT
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             CHECK(writer.available_size() == 2U);  // NOLINT
         }
 
         SECTION("when full") {
-            read_index = 2U;
-            write_index = 1U;  // NOLINT
+            indices.reader() = 2U;
+            indices.writer() = 1U;  // NOLINT
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             CHECK(writer.available_size() == 0U);  // NOLINT
         }
     }
 
     SECTION("reserve bytes") {
-        atomic_type read_index{0U};
-        atomic_type write_index{0U};
+        atomic_index_pair_type indices;
         constexpr shm_stream_size_t buffer_size = 7U;
         std::array<char, buffer_size> raw_buffer{};
 
         SECTION("when no byte is written and expected size is small") {
-            read_index = 1U;
-            write_index = 1U;
+            indices.reader() = 1U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(3U);  // NOLINT
 
@@ -122,11 +113,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when no byte is written and expected size is large") {
-            read_index = 1U;
-            write_index = 1U;
+            indices.reader() = 1U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -135,11 +125,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when the queue is in the initial state") {
-            read_index = 0U;
-            write_index = 0U;
+            indices.reader() = 0U;
+            indices.writer() = 0U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -148,11 +137,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when one byte is written after the initialization") {
-            read_index = 0U;
-            write_index = 1U;
+            indices.reader() = 0U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -161,11 +149,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when one byte is written and one byte is read") {
-            read_index = 1U;
-            write_index = 2U;
+            indices.reader() = 1U;
+            indices.writer() = 2U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -174,11 +161,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when some bytes are written") {
-            read_index = 2U;
-            write_index = 6U;  // NOLINT
+            indices.reader() = 2U;
+            indices.writer() = 6U;  // NOLINT
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -187,11 +173,10 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
         }
 
         SECTION("when full") {
-            read_index = 2U;
-            write_index = 1U;  // NOLINT
+            indices.reader() = 2U;
+            indices.writer() = 1U;  // NOLINT
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             const auto buffer = writer.try_reserve(10U);  // NOLINT
 
@@ -201,54 +186,50 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
     }
 
     SECTION("commit bytes") {
-        atomic_type read_index{0U};
-        atomic_type write_index{0U};
+        atomic_index_pair_type indices;
         constexpr shm_stream_size_t buffer_size = 7U;
         std::array<char, buffer_size> raw_buffer{};
 
         SECTION("when no byte is written") {
-            read_index = 1U;
-            write_index = 1U;
+            indices.reader() = 1U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
             const auto buffer = writer.try_reserve(1U);
             CHECK(buffer.size() == 1U);
 
             writer.commit(0U);
 
-            CHECK(read_index == 1U);
-            CHECK(write_index == 1U);
+            CHECK(indices.reader() == 1U);
+            CHECK(indices.writer() == 1U);
         }
 
         SECTION("when some bytes are written") {
-            read_index = 1U;
-            write_index = 1U;
+            indices.reader() = 1U;
+            indices.writer() = 1U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
             const auto buffer = writer.try_reserve(3U);
             CHECK(buffer.size() == 3U);
 
             writer.commit(2U);
 
-            CHECK(read_index == 1U);
-            CHECK(write_index == 3U);
+            CHECK(indices.reader() == 1U);
+            CHECK(indices.writer() == 3U);
         }
 
         SECTION("when all reserved bytes are written") {
-            read_index = 2U;
-            write_index = 4U;
+            indices.reader() = 2U;
+            indices.writer() = 4U;
             writer_type writer{
-                atomic_index_pair_view_type(&write_index, &read_index),
-                mutable_bytes_view(raw_buffer.data(), buffer_size)};
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
             const auto buffer = writer.try_reserve(3U);
             CHECK(buffer.size() == 3U);
 
             writer.commit(3U);
 
-            CHECK(read_index == 2U);
-            CHECK(write_index == 0U);
+            CHECK(indices.reader() == 2U);
+            CHECK(indices.writer() == 0U);
         }
     }
 }
