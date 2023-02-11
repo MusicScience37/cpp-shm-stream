@@ -14,7 +14,7 @@ project(
     ${SHORT_PROJECT_NAME}
     VERSION ${${UPPER_PROJECT_NAME}_VERSION}
     DESCRIPTION "A C++ library of streams on shared memory."
-    LANGUAGES CXX)
+    LANGUAGES C CXX)
 message(STATUS "${FULL_PROJECT_NAME} version ${PROJECT_VERSION}")
 message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
 
@@ -46,6 +46,8 @@ conan_basic_setup()
 # find packages installed with Conan
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+find_package(Boost REQUIRED)
+find_package(fmt REQUIRED)
 if(${UPPER_PROJECT_NAME}_TESTING)
     find_package(Catch2 REQUIRED)
 endif()
@@ -65,6 +67,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(
     ${PROJECT_NAME} INTERFACE ${${UPPER_PROJECT_NAME}_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} INTERFACE ${PROJECT_NAME}_cpp_warnings)
+target_link_libraries(${PROJECT_NAME} INTERFACE Boost::atomic fmt::fmt)
 
 if(${UPPER_PROJECT_NAME}_BUILD_DOC)
     add_subdirectory(doc)

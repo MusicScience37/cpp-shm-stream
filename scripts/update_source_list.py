@@ -25,7 +25,7 @@ def list_source_files(base_dir: Path) -> list[Path]:
     for child in base_dir.iterdir():
         if child.is_dir():
             files = files + list_source_files(child)
-        elif child.is_file() and str(child.suffix) == ".cpp":
+        elif child.is_file() and str(child.suffix) in [".c", ".cpp"]:
             files = files + [child]
     return files
 

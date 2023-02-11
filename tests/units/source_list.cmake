@@ -1,3 +1,3 @@
 set(SOURCE_FILES
-    dummy_test.cpp
+    cpp_shm_stream/details/no_wait_bytes_queue_test.cpp
 )

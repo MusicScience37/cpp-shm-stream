@@ -41,6 +41,7 @@ class LibraryConan(ConanFile):
 
     def requirements(self):
         self.requires("boost/1.81.0")
+        self.requires("fmt/9.1.0")
 
     def build_requirements(self):
         if self.options.requirements_for_tests:
