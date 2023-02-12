@@ -321,7 +321,7 @@ doc:
     - cd $BUILD_DIR
     - poetry run conan profile new --force --detect default
     - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
-    - poetry run conan install --build missing -s build_type=$BUILD_TYPE -o requirements_for_tests=True ..
+    - poetry run conan install --build missing -s build_type=$BUILD_TYPE ..
     - cd ../
   script:
     - cmake -S ./ -B build_doc
