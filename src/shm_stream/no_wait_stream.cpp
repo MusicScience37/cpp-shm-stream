@@ -76,6 +76,28 @@ struct no_wait_stream_data {
 };
 
 /*!
+ * \brief Get the name of the shared memory of a stream.
+ *
+ * \param[in] stream_name Name of the stream.
+ * \return Name of the shared memory.
+ */
+[[nodiscard]] std::string no_wait_stream_shm_name(string_view stream_name) {
+    return "shm_stream_no_wait_stream_data_" +
+        std::string(stream_name.data(), stream_name.size());
+}
+
+/*!
+ * \brief Get the name of the mutex of a stream.
+ *
+ * \param[in] stream_name Name of the stream.
+ * \return Name of the mutex.
+ */
+[[nodiscard]] std::string no_wait_stream_mutex_name(string_view stream_name) {
+    return "shm_stream_no_wait_stream_lock_" +
+        std::string(stream_name.data(), stream_name.size());
+}
+
+/*!
  * \brief Prepare data of no_wait_stream_writer and no_wait_stream_reader.
  *
  * \param[in] name Name of the stream.
@@ -86,20 +108,18 @@ struct no_wait_stream_data {
     string_view name, shm_stream_size_t buffer_size) {
     no_wait_stream_data data{};
 
-    const std::string data_shm_name = "shm_stream_no_wait_stream_data_" +
-        std::string(name.data(), name.size());
+    const std::string data_shm_name = no_wait_stream_shm_name(name);
+    const std::string mutex_name = no_wait_stream_mutex_name(name);
+    boost::interprocess::named_mutex mutex{
+        boost::interprocess::open_or_create, mutex_name.c_str()};
+    std::unique_lock<boost::interprocess::named_mutex> lock(mutex);
+
     try {
         data.shared_memory = boost::interprocess::shared_memory_object(
             boost::interprocess::open_only, data_shm_name.c_str(),
             boost::interprocess::read_write);
     } catch (...) {
         // Shared memory doesn't exist, so create one.
-        boost::interprocess::named_mutex mutex{
-            boost::interprocess::open_or_create,
-            ("shm_stream_no_wait_stream_lock_" +
-                std::string(name.data(), name.size()))
-                .c_str()};
-        std::unique_lock<boost::interprocess::named_mutex> lock(mutex);
 
         data.shared_memory = boost::interprocess::shared_memory_object(
             boost::interprocess::create_only, data_shm_name.c_str(),
@@ -120,6 +140,7 @@ struct no_wait_stream_data {
         header->indices.reader() = 0U;
         header->buffer_size = buffer_size;
 
+        data.atomic_indices = &header->indices;
         data.buffer = mutable_bytes_view(
             static_cast<char*>(static_cast<void*>(header + 1)),
             header->buffer_size);
@@ -210,6 +231,76 @@ void no_wait_stream_writer::commit(shm_stream_size_t written_size) noexcept {
         return;
     }
     impl_->writer.commit(written_size);
+}
+
+//! Type of the internal data.
+struct no_wait_stream_reader::impl_type {
+    //! Shared memory object.
+    boost::interprocess::shared_memory_object shared_memory;
+
+    //! Mapped region.
+    boost::interprocess::mapped_region mapped_region;
+
+    //! Writer.
+    details::no_wait_bytes_queue_reader<> reader;
+
+    /*!
+     * \brief Constructor.
+     *
+     * \param[in] data Data.
+     */
+    explicit impl_type(details::no_wait_stream_data&& data)
+        : shared_memory(std::move(data.shared_memory)),
+          mapped_region(std::move(data.mapped_region)),
+          reader(*data.atomic_indices, data.buffer) {}
+};
+
+no_wait_stream_reader::no_wait_stream_reader() : impl_(nullptr) {}
+
+no_wait_stream_reader::~no_wait_stream_reader() noexcept { close(); }
+
+void no_wait_stream_reader::open(
+    string_view name, shm_stream_size_t buffer_size) {
+    close();
+    impl_ =
+        new impl_type(details::prepare_no_wait_stream_data(name, buffer_size));
+}
+
+void no_wait_stream_reader::close() noexcept {
+    if (impl_ == nullptr) {
+        return;
+    }
+    delete impl_;
+    impl_ = nullptr;
+}
+
+shm_stream_size_t no_wait_stream_reader::available_size() const noexcept {
+    if (impl_ == nullptr) {
+        return 0U;
+    }
+    return impl_->reader.available_size();
+}
+
+bytes_view no_wait_stream_reader::try_reserve(
+    shm_stream_size_t expected_size) noexcept {
+    if (impl_ == nullptr) {
+        return bytes_view(nullptr, 0U);
+    }
+    return impl_->reader.try_reserve(expected_size);
+}
+
+bytes_view no_wait_stream_reader::try_reserve() noexcept {
+    if (impl_ == nullptr) {
+        return bytes_view(nullptr, 0U);
+    }
+    return impl_->reader.try_reserve();
+}
+
+void no_wait_stream_reader::commit(shm_stream_size_t read_size) noexcept {
+    if (impl_ == nullptr) {
+        return;
+    }
+    impl_->reader.commit(read_size);
 }
 
 }  // namespace shm_stream

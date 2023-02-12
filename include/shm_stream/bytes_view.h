@@ -82,6 +82,15 @@ public:
         : data_(data), size_(size) {}
 
     /*!
+     * \brief Constructor.
+     *
+     * \param[in] view View of a writable byte sequence.
+     */
+    bytes_view(  // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
+        const mutable_bytes_view& view) noexcept
+        : bytes_view(view.data(), view.size()) {}
+
+    /*!
      * \brief Get the pointer to the data.
      *
      * \return Pointer to the data.

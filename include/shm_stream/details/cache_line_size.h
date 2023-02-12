@@ -34,7 +34,7 @@ namespace details {
  * \note This function returns a fixed value in all environment because some
  * compilers didn't implement a way to get the value using C++ standard library.
  */
-[[nodiscard]] constexpr std::size_t cache_line_size() {
+[[nodiscard]] inline constexpr std::size_t cache_line_size() {
     return 64U;  // NOLINT
 }
 
