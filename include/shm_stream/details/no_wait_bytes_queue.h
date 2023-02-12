@@ -119,14 +119,14 @@ public:
         -> no_wait_bytes_queue_writer& = default;
 
     //! Destructor.
-    ~no_wait_bytes_queue_writer() = default;
+    ~no_wait_bytes_queue_writer() noexcept = default;
 
     /*!
      * \brief Get the size of the available bytes to write.
      *
      * \return Size of the available bytes to write.
      */
-    [[nodiscard]] shm_stream_size_t available_size() const {
+    [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_read_index =
             atomic_next_read_index_->load(boost::memory_order::relaxed);
 
@@ -193,7 +193,7 @@ private:
      * \return Number of reservable bytes.
      */
     [[nodiscard]] shm_stream_size_t calc_reservable_size(
-        shm_stream_size_t next_read_index) const {
+        shm_stream_size_t next_read_index) const noexcept {
         if (next_write_index_ < next_read_index) {
             return next_read_index - next_write_index_ - 1U;
         }
@@ -304,14 +304,14 @@ public:
         -> no_wait_bytes_queue_reader& = default;
 
     //! Destructor.
-    ~no_wait_bytes_queue_reader() = default;
+    ~no_wait_bytes_queue_reader() noexcept = default;
 
     /*!
      * \brief Get the size of the available bytes to read.
      *
      * \return Size of the available bytes to read.
      */
-    [[nodiscard]] shm_stream_size_t available_size() const {
+    [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_write_index =
             atomic_next_write_index_->load(boost::memory_order::relaxed);
 
@@ -379,7 +379,7 @@ private:
      * \return Number of reservable bytes.
      */
     [[nodiscard]] shm_stream_size_t calc_reservable_size(
-        shm_stream_size_t next_write_index) const {
+        shm_stream_size_t next_write_index) const noexcept {
         if (next_read_index_ <= next_write_index) {
             return next_write_index - next_read_index_;
         }

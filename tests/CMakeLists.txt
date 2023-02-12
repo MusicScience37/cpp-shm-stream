@@ -15,8 +15,9 @@ file(MAKE_DIRECTORY ${${UPPER_PROJECT_NAME}_TEMP_TEST_DIR})
 set(${UPPER_PROJECT_NAME}_TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 macro(target_add_catch2 TARGET)
-    target_link_libraries(${TARGET} PRIVATE Catch2::Catch2WithMain
-                                            ${PROJECT_NAME})
+    target_link_libraries(
+        ${TARGET} PRIVATE Catch2::Catch2WithMain ${PROJECT_NAME}
+                          ${PROJECT_NAME}_cpp_warnings)
     target_include_directories(
         ${TARGET} PRIVATE ${${UPPER_PROJECT_NAME}_TEST_INCLUDE_DIR})
 
@@ -42,7 +43,7 @@ endif()
 option(${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS
        "enable integration tests of ${FULL_PROJECT_NAME}" ON)
 if(${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS)
-    # add_subdirectory(integ)
+    add_subdirectory(integ)
 endif()
 
 option(${UPPER_PROJECT_NAME}_ENABLE_BENCH

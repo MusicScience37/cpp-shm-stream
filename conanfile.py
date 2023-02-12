@@ -18,9 +18,13 @@ class LibraryConan(ConanFile):
     topics = ()
     settings = "os", "compiler", "build_type", "arch"
     options = {
+        "shared": [True, False],
+        "fPIC": [True, False],
         "requirements_for_tests": [True, False],
     }
     default_options = {
+        "shared": True,
+        "fPIC": True,
         "requirements_for_tests": False,
     }
     exports_sources = "include/*"
