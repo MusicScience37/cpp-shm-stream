@@ -51,6 +51,14 @@ public:
      */
     [[nodiscard]] shm_stream_size_t size() const noexcept { return size_; }
 
+    /*!
+     * \brief Check whether this buffer is empty.
+     *
+     * \retval true This buffer is empty.
+     * \retval false This buffer is not empty.
+     */
+    [[nodiscard]] bool empty() const noexcept { return size_ == 0U; }
+
 private:
     //! Pointer to the data.
     char* data_;
@@ -88,6 +96,14 @@ public:
     [[nodiscard]] constexpr shm_stream_size_t size() const noexcept {
         return size_;
     }
+
+    /*!
+     * \brief Check whether this buffer is empty.
+     *
+     * \retval true This buffer is empty.
+     * \retval false This buffer is not empty.
+     */
+    [[nodiscard]] bool empty() const noexcept { return size_ == 0U; }
 
 private:
     //! Pointer to the data.
