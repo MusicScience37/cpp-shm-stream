@@ -108,6 +108,7 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         writer_thread.join();
         reader_thread.join();
 
+        CHECK(read_data == data);
         CHECK(reader.available_size() == 0U);
     }
 }
