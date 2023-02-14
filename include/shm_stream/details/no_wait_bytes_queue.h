@@ -76,7 +76,7 @@ public:
      *
      * \param[in] atomic_indices Atomic variables of the indices of the next
      * bytes for the writer and the reader.
-     * \param[in] buffer Pointer to the buffer of data.
+     * \param[in] buffer Buffer of data.
      */
     no_wait_bytes_queue_writer(
         atomic_index_pair_view<atomic_type> atomic_indices,
@@ -262,7 +262,7 @@ public:
      *
      * \param[in] atomic_indices Atomic variables of the indices of the next
      * bytes for the writer and the reader.
-     * \param[in] buffer Pointer to the buffer of data.
+     * \param[in] buffer Buffer of data.
      */
     no_wait_bytes_queue_reader(
         atomic_index_pair_view<atomic_type> atomic_indices, bytes_view buffer)

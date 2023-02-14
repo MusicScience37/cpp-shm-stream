@@ -71,7 +71,7 @@ struct no_wait_stream_data {
      */
     atomic_index_pair<>* atomic_indices{nullptr};
 
-    //! Pointer to the buffer of data.
+    //! Buffer of data.
     mutable_bytes_view buffer{nullptr, 0U};
 };
 
