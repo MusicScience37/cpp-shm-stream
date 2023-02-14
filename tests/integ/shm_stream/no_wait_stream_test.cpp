@@ -25,6 +25,8 @@
 #include <future>
 #include <thread>
 
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "shm_stream/common_types.h"
@@ -36,12 +38,17 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
     using shm_stream::shm_stream_size_t;
     using shm_stream_test::generate_data;
 
+    const std::string stream_name = "no_wait_stream_test";
+    boost::interprocess::shared_memory_object::remove(
+        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+    boost::interprocess::named_mutex::remove(
+        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+
     SECTION("send data") {
         no_wait_stream_writer writer;
         no_wait_stream_reader reader;
 
         constexpr shm_stream_size_t buffer_size = 10U;
-        const std::string stream_name = "no_wait_stream_test";
         writer.open(stream_name, buffer_size);
         reader.open(stream_name, buffer_size);
 
@@ -111,4 +118,9 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         CHECK(read_data == data);
         CHECK(reader.available_size() == 0U);
     }
+
+    boost::interprocess::shared_memory_object::remove(
+        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+    boost::interprocess::named_mutex::remove(
+        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
 }
