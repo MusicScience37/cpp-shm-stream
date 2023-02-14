@@ -23,11 +23,7 @@ sast:
 license_scanning:
   needs: []
 
-.retry setting:
-  retry: 1
-
 line count:
-  extends: .retry setting
   stage: test
   needs: []
   image: registry.gitlab.com/musicscience37projects/docker/cloc-docker
@@ -49,7 +45,7 @@ line count:
 pre-commit:
   stage: test
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   script:
     - mkdir -p .venv
     - poetry config virtualenvs.in-project true
@@ -89,17 +85,26 @@ spell check:
       "**/*.bash"
   interruptible: true
 
-.release-test-base:
-  extends: .retry setting
+test release:
   stage: test
   needs: []
+  parallel:
+    matrix:
+      - COMPILER_TYPE: ["gcc10"]
+        IMAGE_PATH: "musicscience37/gcc-ci"
+        CONAN_LIBCXX: libstdc++11
+        CXX_STANDARD: 14
+      - COMPILER_TYPE: ["clang13"]
+        IMAGE_PATH: "musicscience37/clang-ci"
+        CONAN_LIBCXX: libc++
+        CXX_STANDARD: 14
+  image: ${IMAGE_PATH}:${COMPILER_TYPE}
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive
+    BUILD_TYPE: Release
+    BUILD_DIR: build_${COMPILER_TYPE}_release
     CCACHE_DIR: ${CI_PROJECT_DIR}/.cache
     CCACHE_COMPILERCHECK: content
     CONAN_USER_HOME: ${CI_PROJECT_DIR}
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Release
   before_script:
     - mkdir -p .venv
     - poetry config virtualenvs.in-project true
@@ -108,20 +113,22 @@ spell check:
     - mkdir $BUILD_DIR
     - cd $BUILD_DIR
     - poetry run conan profile new --force --detect default
-    - poetry run conan profile update settings.compiler.libcxx=${CONAN_STD_CPP_LIB} default
-    - poetry run conan install --build missing -s build_type=${CMAKE_BUILD_TYPE} -o requirements_for_tests=True ..
+    - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
+    - poetry run conan install --build missing -s build_type=$BUILD_TYPE -o requirements_for_tests=True ..
     - cd ../
   script:
     - cmake -S ./ -B $BUILD_DIR
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=ON
-      -D${UPPER_PROJECT_NAME}_ENABLE_BENCH=OFF
-      -D${UPPER_PROJECT_NAME}_TEST_BENCHMARKS=OFF
-      -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=OFF
+      -D${UPPER_PROJECT_NAME}_ENABLE_BENCH=ON
+      -D${UPPER_PROJECT_NAME}_TEST_BENCHMARKS=ON
+      -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=ON
+      -D${UPPER_PROJECT_NAME}_TEST_EXAMPLES=ON
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
+      -DCMAKE_CXX_STANDARD=$CXX_STANDARD
     - cd $BUILD_DIR
     - cmake --build .
     - ctest -V
@@ -130,6 +137,7 @@ spell check:
       prefix: cache-${CI_JOB_NAME}
       files:
         - poetry.lock
+        - conanfile.py
     paths:
       - .cache
       - .conan
@@ -139,6 +147,7 @@ spell check:
       - $BUILD_DIR/bench
       - $BUILD_DIR/junit
       - $BUILD_DIR/temp_test
+      - $BUILD_DIR/coverage
     reports:
       junit:
         - $BUILD_DIR/junit/*.xml
@@ -146,56 +155,73 @@ spell check:
     expire_in: "1 mos"
   interruptible: true
 
-.bench-base:
-  extends: .release-test-base
+test debug:
+  extends: test release
+  parallel:
+    matrix:
+      - COMPILER_TYPE: ["gcc10"]
+        IMAGE_PATH: "musicscience37/gcc-ci"
+        CONAN_LIBCXX: libstdc++11
+        CXX_STANDARD: 14
+      - COMPILER_TYPE: ["clang13"]
+        IMAGE_PATH: "musicscience37/clang-ci"
+        CONAN_LIBCXX: libc++
+        CXX_STANDARD: 14
   variables:
-    CMAKE_BUILD_TYPE: Release
+    BUILD_TYPE: Debug
+    BUILD_DIR: build_${COMPILER_TYPE}_debug
   script:
     - cmake -S ./ -B $BUILD_DIR
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
-      -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=OFF
-      -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=OFF
-      -D${UPPER_PROJECT_NAME}_ENABLE_BENCH=ON
-      -D${UPPER_PROJECT_NAME}_TEST_BENCHMARKS=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=ON
       -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=ON
-      -D${UPPER_PROJECT_NAME}_TEST_EXAMPLES=ON
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
-      -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
+      -DCMAKE_CXX_STANDARD=$CXX_STANDARD
     - cd $BUILD_DIR
     - cmake --build .
     - ctest -V
 
 static analysis:
-  extends: .release-test-base
-  stage: test
-  needs: []
-  image: musicscience37/clang-ci:clang14
+  extends: test debug
+  parallel:
+    matrix:
+      - COMPILER_TYPE: "clang13"
+        IMAGE_PATH: "musicscience37/clang-ci"
+        CONAN_LIBCXX: libc++
+        CXX_STANDARD: 14
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive
+    BUILD_TYPE: Debug
     BUILD_DIR: build_static_analysis
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Debug
   script:
     - cmake -S ./ -B ${BUILD_DIR}
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_BENCH=ON
       -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CPP_WARNINGS:BOOL=ON
+      -DCMAKE_CXX_STANDARD=$CXX_STANDARD
     - poetry run clang-tidy-checker -b ${BUILD_DIR}
 
 clang coverage:
-  extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+  extends: test debug
+  parallel:
+    matrix:
+      - COMPILER_TYPE: "clang13"
+        IMAGE_PATH: "musicscience37/clang-ci"
+        CONAN_LIBCXX: libc++
+        CXX_STANDARD: 14
   variables:
     BUILD_DIR: build_clang_coverage
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Debug
   script:
     - cmake -S ./ -B $BUILD_DIR
       -DCMAKE_BUILD_TYPE=Debug
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=ON
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       "-DCMAKE_CXX_FLAGS=-fprofile-instr-generate -fcoverage-mapping"
       "-DCMAKE_MODULE_LINKER_FLAGS=-fprofile-instr-generate -fcoverage-mapping"
@@ -224,90 +250,23 @@ clang coverage:
     when: always
     expire_in: "1 mos"
 
-gcc-10-debug:
-  extends: .release-test-base
-  image: musicscience37/gcc-ci:gcc10
-  variables:
-    BUILD_DIR: build_gcc10_debug
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Debug
-
-gcc-10-release:
-  extends: .release-test-base
-  image: musicscience37/gcc-ci:gcc10
-  variables:
-    BUILD_DIR: build_gcc10_release
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Release
-
-gcc-10-bench:
-  extends: .bench-base
-  image: musicscience37/gcc-ci:gcc10
-  variables:
-    BUILD_DIR: build_gcc10_bench
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Release
-
-gcc-12-debug:
-  extends: .release-test-base
-  image: musicscience37/gcc-ci:gcc12
-  variables:
-    BUILD_DIR: build_gcc12_debug
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Debug
-
-gcc-12-release:
-  extends: .release-test-base
-  image: musicscience37/gcc-ci:gcc12
-  variables:
-    BUILD_DIR: build_gcc12_release
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Release
-
-gcc-12-bench:
-  extends: .bench-base
-  image: musicscience37/gcc-ci:gcc12
-  variables:
-    BUILD_DIR: build_gcc12_bench
-    CONAN_STD_CPP_LIB: "libstdc++11"
-    CMAKE_BUILD_TYPE: Release
-
-clang-14-debug:
-  extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
-  variables:
-    BUILD_DIR: build_clang14_debug
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Debug
-
-clang-14-release:
-  extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
-  variables:
-    BUILD_DIR: build_clang14_release
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Release
-
-clang-14-bench:
-  extends: .bench-base
-  image: musicscience37/clang-ci:clang14
-  variables:
-    BUILD_DIR: build_clang14_bench
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Release
-
-clang-14-asan-ubsan:
-  extends: .release-test-base
-  image: musicscience37/clang-ci:clang14
+clang-13-asan-ubsan:
+  extends: test debug
+  parallel:
+    matrix:
+      - COMPILER_TYPE: "clang13"
+        IMAGE_PATH: "musicscience37/clang-ci"
+        CONAN_LIBCXX: libc++
+        CXX_STANDARD: 14
   variables:
     BUILD_DIR: build_clang_asan_ubsan
     ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
-    CONAN_STD_CPP_LIB: "libc++"
-    CMAKE_BUILD_TYPE: Debug
   script:
     - cmake -S ./ -B $BUILD_DIR
       -DCMAKE_BUILD_TYPE=Debug
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
+      -D${UPPER_PROJECT_NAME}_ENABLE_INTEG_TESTS=ON
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_AUSAN:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
@@ -316,10 +275,9 @@ clang-14-asan-ubsan:
     - ctest -V
 
 # TODO
-.clang-14-conan:
-  extends: .retry setting
+.clang-13-conan:
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     CONAN_CHANNEL: "testing"
   script:
@@ -333,11 +291,10 @@ clang-14-asan-ubsan:
   interruptible: true
 
 # TODO
-.clang-14-conan-release:
-  extends: .retry setting
+.clang-13-conan-release:
   stage: deploy
   needs: []
-  image: musicscience37/clang-ci:clang14
+  image: musicscience37/clang-ci:clang13
   variables:
     CONAN_CHANNEL: "stable"
   script:
@@ -352,105 +309,31 @@ clang-14-asan-ubsan:
     - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} poetry run conan upload -r cpp-shm-stream ${CONAN_PACKAGE_NAME} -c --all
   only:
     - tags
+  interruptible: true
 
-.msvc-base:
-  extends: .release-test-base
-  tags:
-    - shared-windows
-    - windows
-    - windows-1809
+doc:
   stage: test
   needs: []
-  dependencies: []
+  image: musicscience37/sphinx-doxygen:clang13
   variables:
-    CONAN_USER_HOME: C:\Users\gitlab_runner
-    # Workaround in https://docs.conan.io/en/latest/reference/conanfile/attributes.html?highlight=conan_use_always_short_paths#short-paths
-    CONAN_USE_ALWAYS_SHORT_PATHS: 1
-    # Workaround in https://github.com/python-poetry/poetry/issues/1917#issuecomment-1235998997
-    PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+    GIT_SUBMODULE_STRATEGY: recursive
+    BUILD_TYPE: Release
+    CONAN_LIBCXX: libc++
+    BUILD_DIR: build_doc
   before_script:
-    - (mv ${CI_PROJECT_DIR}/.conan C:\Users\gitlab_runner -Force)
-    - Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-    - choco install cmake -y --installargs 'ADD_CMAKE_TO_PATH=System'
-    - choco install python --version=3.10.8 -y
-    - choco install ccache -y
-    - RefreshEnv
-    - ccache --version
-    - pip install poetry
+    - mkdir -p .venv
     - poetry config virtualenvs.in-project true
     - poetry env use 3.10
     - poetry install
-  script:
-    # Changed in below.
-    - ls
-  after_script:
-    - (mv C:\Users\gitlab_runner\.conan ${CI_PROJECT_DIR} -Force)
-  allow_failure: true
-  interruptible: true
-
-# TODO
-.msvc-debug:
-  extends: .msvc-base
-  variables:
-    BUILD_DIR: build_msvc_debug
-  script:
     - mkdir $BUILD_DIR
     - cd $BUILD_DIR
     - poetry run conan profile new --force --detect default
-    - poetry run conan install --build missing -o requirements_for_tests=True -s build_type=Debug ..
+    - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
+    - poetry run conan install --build missing -s build_type=$BUILD_TYPE ..
     - cd ../
-    - cmake -S ./ -B $BUILD_DIR
-      -DCMAKE_BUILD_TYPE=Debug
-      -DSHM_STREAM_TESTING:BOOL=ON
-      -DSHM_STREAM_ENABLE_UNIT_TESTS=ON
-      -DSHM_STREAM_ENABLE_INTEG_TESTS=OFF
-      -DSHM_STREAM_ENABLE_BENCH=OFF
-      -DSHM_STREAM_TEST_BENCHMARKS=OFF
-      -DSHM_STREAM_BUILD_EXAMPLES=OFF
-      -DSHM_STREAM_TEST_EXAMPLES=OFF
-      -DSHM_STREAM_WRITE_JUNIT:BOOL=ON
-      -DSHM_STREAM_ENABLE_CCACHE:BOOL=ON
-    - cd $BUILD_DIR
-    - cmake --build . --config Debug --parallel 3
-    - ctest -V --build-config Debug
-
-# TODO
-.msvc-release:
-  extends: .msvc-base
-  variables:
-    BUILD_DIR: build_msvc
-  script:
-    - mkdir $BUILD_DIR
-    - cd $BUILD_DIR
-    - poetry run conan profile new --force --detect default
-    - poetry run conan install --build missing -o requirements_for_tests=True -s build_type=Release ..
-    - cd ../
-    - cmake -S ./ -B $BUILD_DIR
-      -DCMAKE_BUILD_TYPE=Release
-      -DSHM_STREAM_TESTING:BOOL=ON
-      -DSHM_STREAM_ENABLE_UNIT_TESTS=ON
-      -DSHM_STREAM_ENABLE_INTEG_TESTS=OFF
-      -DSHM_STREAM_ENABLE_BENCH=OFF
-      -DSHM_STREAM_TEST_BENCHMARKS=OFF
-      -DSHM_STREAM_BUILD_EXAMPLES=OFF
-      -DSHM_STREAM_TEST_EXAMPLES=OFF
-      -DSHM_STREAM_WRITE_JUNIT:BOOL=ON
-      -DSHM_STREAM_ENABLE_CCACHE:BOOL=ON
-    - cd $BUILD_DIR
-    - cmake --build . --config Release --parallel 3
-    - ctest -V --build-config Release
-
-doc:
-  extends: .release-test-base
-  stage: test
-  needs: []
-  image: musicscience37/sphinx-doxygen:clang14
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-    CMAKE_BUILD_TYPE: Release
-    BUILD_DIR: build_doc
   script:
     - cmake -S ./ -B build_doc
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_BUILD_DOC:BOOL=ON
     - cmake --build build_doc --target ${LOWER_PROJECT_NAME}_doc
   artifacts:
@@ -461,7 +344,6 @@ doc:
   interruptible: true
 
 pages:
-  extends: .retry setting
   stage: deploy
   only:
     - develop

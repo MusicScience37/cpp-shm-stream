@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Kenta Kabashima.
+ * Copyright 2023 MusicScience37 (Kenta Kabashima)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,20 @@
  */
 /*!
  * \file
- * \brief Definition of macros of the version of this project.
+ * \brief Definition of common types.
  */
 #pragma once
 
-//! Major version of this project.
-#define SHM_STREAM_VERSION_MAJOR 0
+#include <cstdint>
 
-//! Minor version of this project.
-#define SHM_STREAM_VERSION_MINOR 1
+namespace shm_stream {
 
-//! Patch version of this project.
-#define SHM_STREAM_VERSION_PATCH 0
+/*!
+ * \brief Type of sizes used in this library.
+ *
+ * \note For compatibility of data shared between processes, I defined this type
+ * with a fixed size.
+ */
+using shm_stream_size_t = std::uint32_t;
+
+}  // namespace shm_stream

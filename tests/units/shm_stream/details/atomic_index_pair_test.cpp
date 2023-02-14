@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Kenta Kabashima.
+ * Copyright 2023 MusicScience37 (Kenta Kabashima)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,20 @@
  */
 /*!
  * \file
- * \brief Definition of macros of the version of this project.
+ * \brief Test of atomic_index_pair class.
  */
-#pragma once
+#include "shm_stream/details/atomic_index_pair.h"
 
-//! Major version of this project.
-#define SHM_STREAM_VERSION_MAJOR 0
+#include <catch2/catch_test_macros.hpp>
 
-//! Minor version of this project.
-#define SHM_STREAM_VERSION_MINOR 1
+#include "shm_stream/details/cache_line_size.h"
 
-//! Patch version of this project.
-#define SHM_STREAM_VERSION_PATCH 0
+TEST_CASE("shm_stream::details::atomic_index_pair") {
+    using shm_stream::details::atomic_index_pair;
+    using shm_stream::details::cache_line_size;
+
+    SECTION("has proper alignment") {
+        STATIC_CHECK(alignof(atomic_index_pair<>) == cache_line_size());
+        STATIC_CHECK(sizeof(atomic_index_pair<>) == 2U * cache_line_size());
+    }
+}

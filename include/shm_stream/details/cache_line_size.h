@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Kenta Kabashima.
+ * Copyright 2023 MusicScience37 (Kenta Kabashima)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,28 @@
  */
 /*!
  * \file
- * \brief Definition of macros of the version of this project.
+ * \brief Definition of atomic_index_pair class.
  */
 #pragma once
 
-//! Major version of this project.
-#define SHM_STREAM_VERSION_MAJOR 0
+#include <cstddef>
 
-//! Minor version of this project.
-#define SHM_STREAM_VERSION_MINOR 1
+#include "shm_stream/common_types.h"
 
-//! Patch version of this project.
-#define SHM_STREAM_VERSION_PATCH 0
+namespace shm_stream {
+namespace details {
+
+/*!
+ * \brief Get the size of cache lines.
+ *
+ * \return Size of cache line.
+ *
+ * \note This function returns a fixed value in all environment because some
+ * compilers didn't implement a way to get the value using C++ standard library.
+ */
+[[nodiscard]] inline constexpr std::size_t cache_line_size() {
+    return 64U;  // NOLINT
+}
+
+}  // namespace details
+}  // namespace shm_stream

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Kenta Kabashima.
+ * Copyright 2023 MusicScience37 (Kenta Kabashima)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,13 @@
  */
 /*!
  * \file
- * \brief Dummy test.
+ * \brief Definition of SHM_STREAM_ASSERT macro.
  */
-#include <catch2/catch_test_macros.hpp>
+#pragma once
 
-TEST_CASE("dummy test") {
-    //
-}
+#include <cassert>
+
+/*!
+ * \brief Macro for assertion.
+ */
+#define SHM_STREAM_ASSERT assert
