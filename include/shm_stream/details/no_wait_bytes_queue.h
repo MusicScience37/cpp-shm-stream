@@ -15,7 +15,8 @@
  */
 /*!
  * \file
- * \brief Definition of queues of bytes without waiting (possibly lock-free).
+ * \brief Definition of queues of bytes without waiting (possibly lock-free and
+ * wait-free).
  */
 #pragma once
 
@@ -38,7 +39,7 @@ namespace details {
 
 /*!
  * \brief Class of writer of queues of bytes without waiting (possibly
- * lock-free).
+ * lock-free and wait-free).
  *
  * \tparam AtomicType Type of atomic variables.
  *
@@ -70,6 +71,20 @@ public:
      * \return Size.
      */
     static constexpr shm_stream_size_t min_size() noexcept { return 2U; }
+
+    /*!
+     * \brief Get whether this implementation is lock-free in the current
+     * environment.
+     *
+     * \note When this implementation is lock-free, this implementation is also
+     * wait-free.
+     *
+     * \retval true Lock free.
+     * \retval false Not lock-free.
+     */
+    static constexpr bool is_always_lock_free() noexcept {
+        return atomic_type::is_always_lock_free;
+    }
 
     /*!
      * \brief Constructor.
@@ -224,7 +239,7 @@ private:
 
 /*!
  * \brief Class of reader of queues of bytes without waiting  (possibly
- * lock-free).
+ * lock-free and wait-free).
  *
  * \tparam AtomicType Type of atomic variables.
  *
@@ -256,6 +271,20 @@ public:
      * \return Size.
      */
     static constexpr shm_stream_size_t min_size() noexcept { return 2U; }
+
+    /*!
+     * \brief Get whether this implementation is lock-free in the current
+     * environment.
+     *
+     * \note When this implementation is lock-free, this implementation is also
+     * wait-free.
+     *
+     * \retval true Lock free.
+     * \retval false Not lock-free.
+     */
+    static constexpr bool is_always_lock_free() noexcept {
+        return atomic_type::is_always_lock_free;
+    }
 
     /*!
      * \brief Constructor.

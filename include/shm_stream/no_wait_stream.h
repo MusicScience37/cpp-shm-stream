@@ -15,7 +15,8 @@
  */
 /*!
  * \file
- * \brief Definition of streams of bytes without waiting (possibly lock-free).
+ * \brief Definition of streams of bytes without waiting (possibly lock-free and
+ * wait-free).
  */
 #pragma once
 
@@ -28,7 +29,7 @@ namespace shm_stream {
 
 /*!
  * \brief Class of writer of streams of bytes without waiting (possibly
- * lock-free).
+ * lock-free and wait-free).
  */
 class SHM_STREAM_EXPORT no_wait_stream_writer {
 public:
@@ -122,7 +123,7 @@ private:
 
 /*!
  * \brief Class of reader of streams of bytes without waiting (possibly
- * lock-free).
+ * lock-free and wait-free).
  */
 class SHM_STREAM_EXPORT no_wait_stream_reader {
 public:
