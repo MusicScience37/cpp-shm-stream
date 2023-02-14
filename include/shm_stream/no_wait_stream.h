@@ -84,9 +84,9 @@ public:
      * \note This function tries to reserve given number of bytes, but a smaller
      * or empty buffer may be returned.
      * \note This function can return a buffer with a size smaller than the
-     * return value of available_size function, because this queue is a circular
-     * buffer and this function reserves continuous byte sequences from the
-     * circular buffer.
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
      */
     [[nodiscard]] mutable_bytes_view try_reserve(
         shm_stream_size_t expected_size) noexcept;
@@ -99,9 +99,9 @@ public:
      * \note This function tries to reserve given number of bytes, but a smaller
      * or empty buffer may be returned.
      * \note This function can return a buffer with a size smaller than the
-     * return value of available_size function, because this queue is a circular
-     * buffer and this function reserves continuous byte sequences from the
-     * circular buffer.
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
      */
     [[nodiscard]] mutable_bytes_view try_reserve() noexcept;
 
@@ -178,9 +178,9 @@ public:
      * \note This function tries to reserve given number of bytes, but a smaller
      * or empty buffer may be returned.
      * \note This function can return a buffer with a size smaller than the
-     * return value of available_size function, because this queue is a circular
-     * buffer and this function reserves continuous byte sequences from the
-     * circular buffer.
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
      */
     [[nodiscard]] bytes_view try_reserve(
         shm_stream_size_t expected_size) noexcept;
@@ -193,9 +193,9 @@ public:
      * \note This function tries to reserve given number of bytes, but a smaller
      * or empty buffer may be returned.
      * \note This function can return a buffer with a size smaller than the
-     * return value of available_size function, because this queue is a circular
-     * buffer and this function reserves continuous byte sequences from the
-     * circular buffer.
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
      */
     [[nodiscard]] bytes_view try_reserve() noexcept;
 
