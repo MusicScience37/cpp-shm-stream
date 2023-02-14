@@ -23,6 +23,7 @@ Checks: >
   modernize-*,
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
+    -modernize-use-default-member-init,
   hicpp-*,
     -hicpp-no-array-decay,
   cert-*,
@@ -46,6 +47,7 @@ Checks: >
 # - readability-identifier-length prevent traditional codes.
 # - cppcoreguidelines-pro-bounds-array-to-pointer-decay, hicpp-no-array-decay produces warnings to assert macro in C++ standard.
 # - cppcoreguidelines-macro-usage produces false positives, but no true positives.
+# - modernize-use-default-member-init prevents hiding implementation details in .cpp files.
 
 CheckOptions:
   # Naming Conventions
