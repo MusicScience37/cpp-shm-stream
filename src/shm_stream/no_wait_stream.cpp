@@ -241,7 +241,7 @@ struct no_wait_stream_reader::impl_type {
     //! Mapped region.
     boost::interprocess::mapped_region mapped_region;
 
-    //! Writer.
+    //! Reader.
     details::no_wait_bytes_queue_reader<> reader;
 
     /*!
