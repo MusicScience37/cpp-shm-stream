@@ -49,15 +49,16 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         no_wait_stream_reader reader;
 
         constexpr shm_stream_size_t buffer_size = 10U;
-        writer.open(stream_name, buffer_size);
-        reader.open(stream_name, buffer_size);
 
         constexpr shm_stream_size_t data_size = 100U;
         const std::string data = generate_data(data_size);
 
         std::promise<void> written_promise;
         auto written_future = written_promise.get_future();
-        std::thread writer_thread{[&writer, &data, &written_promise] {
+        std::thread writer_thread{[&writer, &stream_name, &data,
+                                      &written_promise] {
+            writer.open(stream_name, buffer_size);
+
             auto data_iter = data.cbegin();
             const auto data_end = data.cend();
             while (true) {
@@ -84,7 +85,10 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         auto read_future = read_promise.get_future();
         std::string read_data;
         read_data.resize(data_size, ' ');
-        std::thread reader_thread{[&reader, &read_data, &read_promise] {
+        std::thread reader_thread{[&reader, &stream_name, &read_data,
+                                      &read_promise] {
+            reader.open(stream_name, buffer_size);
+
             auto data_iter = read_data.begin();
             const auto data_end = read_data.end();
             while (true) {
