@@ -41,6 +41,15 @@ public:
     /*!
      * \brief Constructor.
      *
+     * \param[in] data Pointer to the data.
+     */
+    constexpr string_view(  // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
+        const char* data) noexcept
+        : data_(data), size_(len(data)) {}
+
+    /*!
+     * \brief Constructor.
+     *
      * \param[in] data Data.
      */
     string_view(  // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
@@ -61,12 +70,33 @@ public:
      */
     constexpr std::size_t size() const noexcept { return size_; }
 
+    /*!
+     * \brief Convert to std::string.
+     *
+     * \return This string converted to std::string.
+     */
+    explicit operator std::string() const { return std::string(data_, size_); }
+
 private:
     //! Pointer to the data.
     const char* data_;
 
     //! Size of the data.
     std::size_t size_;
+
+    /*!
+     * \brief Get the length of a string.
+     *
+     * \param[in] data Pointer to the data of the string.
+     * \return Length of the string.
+     */
+    [[nodiscard]] static constexpr std::size_t len(const char* data) noexcept {
+        const char* end = data;
+        while (*end != '\0') {
+            ++end;
+        }
+        return end - data;
+    }
 };
 
 }  // namespace shm_stream
