@@ -82,8 +82,7 @@ struct no_wait_stream_data {
  * \return Name of the shared memory.
  */
 [[nodiscard]] std::string no_wait_stream_shm_name(string_view stream_name) {
-    return "shm_stream_no_wait_stream_data_" +
-        std::string(stream_name.data(), stream_name.size());
+    return fmt::format("shm_stream_no_wait_stream_data_{}", stream_name);
 }
 
 /*!
@@ -93,8 +92,7 @@ struct no_wait_stream_data {
  * \return Name of the mutex.
  */
 [[nodiscard]] std::string no_wait_stream_mutex_name(string_view stream_name) {
-    return "shm_stream_no_wait_stream_lock_" +
-        std::string(stream_name.data(), stream_name.size());
+    return fmt::format("shm_stream_no_wait_stream_lock_{}", stream_name);
 }
 
 /*!
