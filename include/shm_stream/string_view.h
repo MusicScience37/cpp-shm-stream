@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <string>
 
+#include <fmt/format.h>
+
 namespace shm_stream {
 
 /*!
@@ -100,3 +102,29 @@ private:
 };
 
 }  // namespace shm_stream
+
+namespace fmt {
+
+/*!
+ * \brief Specialization of fmt::formatter for shm_stream::string_view.
+ */
+template <>
+struct formatter<shm_stream::string_view> : public formatter<fmt::string_view> {
+public:
+    /*!
+     * \brief Format a value.
+     *
+     * \tparam FormatContext Type of the context.
+     * \param[in] val Value.
+     * \param[in] ctx Context.
+     * \return Output iterator after the format.
+     */
+    template <typename FormatContext>
+    auto format(const shm_stream::string_view& val, FormatContext& ctx) const
+        -> decltype(ctx.out()) {
+        return formatter<fmt::string_view>::format(
+            fmt::string_view(val.data(), val.size()), ctx);
+    }
+};
+
+}  // namespace fmt

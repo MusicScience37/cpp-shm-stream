@@ -28,4 +28,9 @@ TEST_CASE("shm_stream::string_view") {
         constexpr auto str = string_view("abc");
         CHECK(std::string(str) == "abc");
     }
+
+    SECTION("format using fmt library") {
+        constexpr auto str = string_view("abc");
+        CHECK(fmt::format("test {}", str) == "test abc");
+    }
 }
