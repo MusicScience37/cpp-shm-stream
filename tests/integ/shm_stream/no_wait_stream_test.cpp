@@ -39,10 +39,7 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
     using shm_stream_test::generate_data;
 
     const std::string stream_name = "no_wait_stream_test";
-    boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
-    boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+    shm_stream::no_wait_stream::remove(stream_name);
 
     SECTION("send data") {
         no_wait_stream_writer writer;
@@ -123,8 +120,5 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         CHECK(reader.available_size() == 0U);
     }
 
-    boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
-    boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+    shm_stream::no_wait_stream::remove(stream_name);
 }
