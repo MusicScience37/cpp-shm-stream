@@ -96,6 +96,46 @@ struct no_wait_stream_data {
 }
 
 /*!
+ * \brief Create and initialize data of no_wait_stream_writer and
+ * no_wait_stream_reader.
+ *
+ * \param[in] name Name of the stream.
+ * \param[in] buffer_size Size of the buffer.
+ * \return Data.
+ */
+[[nodiscard]] no_wait_stream_data create_and_initialize_stream_data(
+    string_view name, shm_stream_size_t buffer_size) {
+    no_wait_stream_data data{};
+    const std::string data_shm_name = no_wait_stream_shm_name(name);
+
+    data.shared_memory = boost::interprocess::shared_memory_object(
+        boost::interprocess::create_only, data_shm_name.c_str(),
+        boost::interprocess::read_write);
+
+    const boost::interprocess::offset_t data_size =
+        static_cast<boost::interprocess::offset_t>(
+            sizeof(no_wait_stream_header)) +
+        static_cast<boost::interprocess::offset_t>(buffer_size);
+    data.shared_memory.truncate(data_size);
+
+    data.mapped_region = boost::interprocess::mapped_region(
+        data.shared_memory, boost::interprocess::read_write);
+
+    auto* header =
+        new (data.mapped_region.get_address()) no_wait_stream_header();
+    header->indices.writer() = 0U;
+    header->indices.reader() = 0U;
+    header->buffer_size = buffer_size;
+
+    data.atomic_indices = &header->indices;
+    data.buffer =
+        mutable_bytes_view(static_cast<char*>(static_cast<void*>(header + 1)),
+            header->buffer_size);
+
+    return data;
+}
+
+/*!
  * \brief Prepare data of no_wait_stream_writer and no_wait_stream_reader.
  *
  * \param[in] name Name of the stream.
@@ -118,32 +158,7 @@ struct no_wait_stream_data {
             boost::interprocess::read_write);
     } catch (...) {
         // Shared memory doesn't exist, so create one.
-
-        data.shared_memory = boost::interprocess::shared_memory_object(
-            boost::interprocess::create_only, data_shm_name.c_str(),
-            boost::interprocess::read_write);
-
-        const boost::interprocess::offset_t data_size =
-            static_cast<boost::interprocess::offset_t>(
-                sizeof(no_wait_stream_header)) +
-            static_cast<boost::interprocess::offset_t>(buffer_size);
-        data.shared_memory.truncate(data_size);
-
-        data.mapped_region = boost::interprocess::mapped_region(
-            data.shared_memory, boost::interprocess::read_write);
-
-        auto* header =
-            new (data.mapped_region.get_address()) no_wait_stream_header();
-        header->indices.writer() = 0U;
-        header->indices.reader() = 0U;
-        header->buffer_size = buffer_size;
-
-        data.atomic_indices = &header->indices;
-        data.buffer = mutable_bytes_view(
-            static_cast<char*>(static_cast<void*>(header + 1)),
-            header->buffer_size);
-
-        return data;
+        return create_and_initialize_stream_data(name, buffer_size);
     }
 
     data.mapped_region = boost::interprocess::mapped_region(
@@ -185,6 +200,16 @@ struct no_wait_stream_writer::impl_type {
 
 no_wait_stream_writer::no_wait_stream_writer() : impl_(nullptr) {}
 
+no_wait_stream_writer::no_wait_stream_writer(
+    no_wait_stream_writer&& obj) noexcept
+    : impl_(std::exchange(obj.impl_, nullptr)) {}
+
+no_wait_stream_writer& no_wait_stream_writer::operator=(
+    no_wait_stream_writer&& obj) noexcept {
+    std::swap(this->impl_, obj.impl_);
+    return *this;
+}
+
 no_wait_stream_writer::~no_wait_stream_writer() noexcept { close(); }
 
 void no_wait_stream_writer::open(
@@ -200,6 +225,10 @@ void no_wait_stream_writer::close() noexcept {
     }
     delete impl_;
     impl_ = nullptr;
+}
+
+bool no_wait_stream_writer::is_opened() const noexcept {
+    return impl_ != nullptr;
 }
 
 shm_stream_size_t no_wait_stream_writer::available_size() const noexcept {
@@ -255,6 +284,16 @@ struct no_wait_stream_reader::impl_type {
 
 no_wait_stream_reader::no_wait_stream_reader() : impl_(nullptr) {}
 
+no_wait_stream_reader::no_wait_stream_reader(
+    no_wait_stream_reader&& obj) noexcept
+    : impl_(std::exchange(obj.impl_, nullptr)) {}
+
+no_wait_stream_reader& no_wait_stream_reader::operator=(
+    no_wait_stream_reader&& obj) noexcept {
+    std::swap(this->impl_, obj.impl_);
+    return *this;
+}
+
 no_wait_stream_reader::~no_wait_stream_reader() noexcept { close(); }
 
 void no_wait_stream_reader::open(
@@ -270,6 +309,10 @@ void no_wait_stream_reader::close() noexcept {
     }
     delete impl_;
     impl_ = nullptr;
+}
+
+bool no_wait_stream_reader::is_opened() const noexcept {
+    return impl_ != nullptr;
 }
 
 shm_stream_size_t no_wait_stream_reader::available_size() const noexcept {
@@ -300,5 +343,28 @@ void no_wait_stream_reader::commit(shm_stream_size_t read_size) noexcept {
     }
     impl_->reader.commit(read_size);
 }
+
+namespace no_wait_stream {
+
+void create(string_view name, shm_stream_size_t buffer_size) {
+    (void)details::prepare_no_wait_stream_data(name, buffer_size);
+}
+
+void remove(string_view name) {
+    const std::string mutex_name = details::no_wait_stream_mutex_name(name);
+    {
+        boost::interprocess::named_mutex mutex{
+            boost::interprocess::open_or_create, mutex_name.c_str()};
+        {
+            std::unique_lock<boost::interprocess::named_mutex> lock(mutex);
+
+            boost::interprocess::shared_memory_object::remove(
+                details::no_wait_stream_shm_name(name).c_str());
+        }
+    }
+    boost::interprocess::named_mutex::remove(mutex_name.c_str());
+}
+
+}  // namespace no_wait_stream
 
 }  // namespace shm_stream

@@ -42,9 +42,20 @@ public:
     no_wait_stream_writer(const no_wait_stream_writer&) = delete;
     auto operator=(const no_wait_stream_writer&) = delete;
 
-    // TODO Implement move.
-    no_wait_stream_writer(no_wait_stream_writer&&) = delete;
-    auto operator=(no_wait_stream_writer&&) = delete;
+    /*!
+     * \brief Move constructor.
+     *
+     * \param[in] obj Object to move from.
+     */
+    no_wait_stream_writer(no_wait_stream_writer&& obj) noexcept;
+
+    /*!
+     * \brief Move assignment operator.
+     *
+     * \param[in] obj Object to move from.
+     * \return This.
+     */
+    no_wait_stream_writer& operator=(no_wait_stream_writer&& obj) noexcept;
 
     /*!
      * \brief Destructor.
@@ -68,6 +79,14 @@ public:
      * closed.
      */
     void close() noexcept;
+
+    /*!
+     * \brief Check whether this object is opened.
+     *
+     * \retval true This object is opened.
+     * \retval false This object is not opened.
+     */
+    [[nodiscard]] bool is_opened() const noexcept;
 
     /*!
      * \brief Get the size of the available bytes to write.
@@ -136,9 +155,20 @@ public:
     no_wait_stream_reader(const no_wait_stream_reader&) = delete;
     auto operator=(const no_wait_stream_reader&) = delete;
 
-    // TODO Implement move.
-    no_wait_stream_reader(no_wait_stream_reader&&) = delete;
-    auto operator=(no_wait_stream_reader&&) = delete;
+    /*!
+     * \brief Move constructor.
+     *
+     * \param[in] obj Object to move from.
+     */
+    no_wait_stream_reader(no_wait_stream_reader&& obj) noexcept;
+
+    /*!
+     * \brief Move assignment operator.
+     *
+     * \param[in] obj Object to move from.
+     * \return This.
+     */
+    no_wait_stream_reader& operator=(no_wait_stream_reader&& obj) noexcept;
 
     /*!
      * \brief Destructor.
@@ -162,6 +192,14 @@ public:
      * closed.
      */
     void close() noexcept;
+
+    /*!
+     * \brief Check whether this object is opened.
+     *
+     * \retval true This object is opened.
+     * \retval false This object is not opened.
+     */
+    [[nodiscard]] bool is_opened() const noexcept;
 
     /*!
      * \brief Get the size of the available bytes to read.
@@ -215,5 +253,40 @@ private:
     //! Internal data.
     impl_type* impl_;
 };
+
+/*!
+ * \brief Classes and functions of streams of bytes without waiting (possibly
+ * lock-free and wait-free).
+ */
+namespace no_wait_stream {
+
+/*!
+ * \brief Class of writer of streams of bytes without waiting (possibly
+ * lock-free and wait-free).
+ */
+using writer = no_wait_stream_writer;
+
+/*!
+ * \brief Class of reader of streams of bytes without waiting (possibly
+ * lock-free and wait-free).
+ */
+using reader = no_wait_stream_reader;
+
+/*!
+ * \brief Create a stream.
+ *
+ * \param[in] name Name of the stream.
+ * \param[in] buffer_size Size of the buffer.
+ */
+SHM_STREAM_EXPORT void create(string_view name, shm_stream_size_t buffer_size);
+
+/*!
+ * \brief Remove a stream.
+ *
+ * \param[in] name Name of the stream.
+ */
+SHM_STREAM_EXPORT void remove(string_view name);
+
+}  // namespace no_wait_stream
 
 }  // namespace shm_stream
