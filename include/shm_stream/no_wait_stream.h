@@ -281,7 +281,7 @@ using reader = no_wait_stream_reader;
 SHM_STREAM_EXPORT void create(string_view name, shm_stream_size_t buffer_size);
 
 /*!
- * \brief Remove a stream of bytes without waiting.
+ * \brief Remove a stream.
  *
  * \param[in] name Name of the stream.
  */
