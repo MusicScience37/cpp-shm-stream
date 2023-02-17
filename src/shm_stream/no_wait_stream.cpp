@@ -185,6 +185,16 @@ struct no_wait_stream_writer::impl_type {
 
 no_wait_stream_writer::no_wait_stream_writer() : impl_(nullptr) {}
 
+no_wait_stream_writer::no_wait_stream_writer(
+    no_wait_stream_writer&& obj) noexcept
+    : impl_(std::exchange(obj.impl_, nullptr)) {}
+
+no_wait_stream_writer& no_wait_stream_writer::operator=(
+    no_wait_stream_writer&& obj) noexcept {
+    std::swap(this->impl_, obj.impl_);
+    return *this;
+}
+
 no_wait_stream_writer::~no_wait_stream_writer() noexcept { close(); }
 
 void no_wait_stream_writer::open(
@@ -200,6 +210,10 @@ void no_wait_stream_writer::close() noexcept {
     }
     delete impl_;
     impl_ = nullptr;
+}
+
+bool no_wait_stream_writer::is_opened() const noexcept {
+    return impl_ != nullptr;
 }
 
 shm_stream_size_t no_wait_stream_writer::available_size() const noexcept {
@@ -255,6 +269,16 @@ struct no_wait_stream_reader::impl_type {
 
 no_wait_stream_reader::no_wait_stream_reader() : impl_(nullptr) {}
 
+no_wait_stream_reader::no_wait_stream_reader(
+    no_wait_stream_reader&& obj) noexcept
+    : impl_(std::exchange(obj.impl_, nullptr)) {}
+
+no_wait_stream_reader& no_wait_stream_reader::operator=(
+    no_wait_stream_reader&& obj) noexcept {
+    std::swap(this->impl_, obj.impl_);
+    return *this;
+}
+
 no_wait_stream_reader::~no_wait_stream_reader() noexcept { close(); }
 
 void no_wait_stream_reader::open(
@@ -270,6 +294,10 @@ void no_wait_stream_reader::close() noexcept {
     }
     delete impl_;
     impl_ = nullptr;
+}
+
+bool no_wait_stream_reader::is_opened() const noexcept {
+    return impl_ != nullptr;
 }
 
 shm_stream_size_t no_wait_stream_reader::available_size() const noexcept {
