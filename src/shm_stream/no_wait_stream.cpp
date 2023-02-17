@@ -96,6 +96,46 @@ struct no_wait_stream_data {
 }
 
 /*!
+ * \brief Create and initialize data of no_wait_stream_writer and
+ * no_wait_stream_reader.
+ *
+ * \param[in] name Name of the stream.
+ * \param[in] buffer_size Size of the buffer.
+ * \return Data.
+ */
+[[nodiscard]] no_wait_stream_data create_and_initialize_stream_data(
+    string_view name, shm_stream_size_t buffer_size) {
+    no_wait_stream_data data{};
+    const std::string data_shm_name = no_wait_stream_shm_name(name);
+
+    data.shared_memory = boost::interprocess::shared_memory_object(
+        boost::interprocess::create_only, data_shm_name.c_str(),
+        boost::interprocess::read_write);
+
+    const boost::interprocess::offset_t data_size =
+        static_cast<boost::interprocess::offset_t>(
+            sizeof(no_wait_stream_header)) +
+        static_cast<boost::interprocess::offset_t>(buffer_size);
+    data.shared_memory.truncate(data_size);
+
+    data.mapped_region = boost::interprocess::mapped_region(
+        data.shared_memory, boost::interprocess::read_write);
+
+    auto* header =
+        new (data.mapped_region.get_address()) no_wait_stream_header();
+    header->indices.writer() = 0U;
+    header->indices.reader() = 0U;
+    header->buffer_size = buffer_size;
+
+    data.atomic_indices = &header->indices;
+    data.buffer =
+        mutable_bytes_view(static_cast<char*>(static_cast<void*>(header + 1)),
+            header->buffer_size);
+
+    return data;
+}
+
+/*!
  * \brief Prepare data of no_wait_stream_writer and no_wait_stream_reader.
  *
  * \param[in] name Name of the stream.
@@ -118,32 +158,7 @@ struct no_wait_stream_data {
             boost::interprocess::read_write);
     } catch (...) {
         // Shared memory doesn't exist, so create one.
-
-        data.shared_memory = boost::interprocess::shared_memory_object(
-            boost::interprocess::create_only, data_shm_name.c_str(),
-            boost::interprocess::read_write);
-
-        const boost::interprocess::offset_t data_size =
-            static_cast<boost::interprocess::offset_t>(
-                sizeof(no_wait_stream_header)) +
-            static_cast<boost::interprocess::offset_t>(buffer_size);
-        data.shared_memory.truncate(data_size);
-
-        data.mapped_region = boost::interprocess::mapped_region(
-            data.shared_memory, boost::interprocess::read_write);
-
-        auto* header =
-            new (data.mapped_region.get_address()) no_wait_stream_header();
-        header->indices.writer() = 0U;
-        header->indices.reader() = 0U;
-        header->buffer_size = buffer_size;
-
-        data.atomic_indices = &header->indices;
-        data.buffer = mutable_bytes_view(
-            static_cast<char*>(static_cast<void*>(header + 1)),
-            header->buffer_size);
-
-        return data;
+        return create_and_initialize_stream_data(name, buffer_size);
     }
 
     data.mapped_region = boost::interprocess::mapped_region(
