@@ -50,7 +50,7 @@ TEST_CASE("shm_stream::no_wait_stream_writer") {
 
         no_wait_stream_writer moved{std::move(writer)};
         CHECK(moved.is_opened());
-        CHECK_FALSE(writer.is_opened());  // NOLINT(hicpp-invalid-access-moved)
+        CHECK_FALSE(writer.is_opened());  // NOLINT
     }
 
     boost::interprocess::shared_memory_object::remove(
@@ -86,7 +86,7 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
 
         no_wait_stream_reader moved{std::move(writer)};
         CHECK(moved.is_opened());
-        CHECK_FALSE(writer.is_opened());  // NOLINT(hicpp-invalid-access-moved)
+        CHECK_FALSE(writer.is_opened());  // NOLINT
     }
 
     boost::interprocess::shared_memory_object::remove(
