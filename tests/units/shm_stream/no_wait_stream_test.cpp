@@ -94,3 +94,40 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
     boost::interprocess::named_mutex::remove(
         ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
 }
+
+TEST_CASE("shm_stream::no_wait_stream") {
+    using shm_stream::shm_stream_size_t;
+
+    const std::string stream_name = "no_wait_stream_reader_test";
+
+    boost::interprocess::shared_memory_object::remove(
+        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+    boost::interprocess::named_mutex::remove(
+        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+
+    SECTION("create a stream") {
+        constexpr shm_stream_size_t buffer_size = 10U;
+        shm_stream::no_wait_stream::create(stream_name, buffer_size);
+
+        CHECK(boost::interprocess::shared_memory_object::remove(
+            ("shm_stream_no_wait_stream_data_" + stream_name).c_str()));
+        CHECK(boost::interprocess::named_mutex::remove(
+            ("shm_stream_no_wait_stream_lock_" + stream_name).c_str()));
+    }
+
+    SECTION("remove a stream") {
+        constexpr shm_stream_size_t buffer_size = 10U;
+        shm_stream::no_wait_stream::create(stream_name, buffer_size);
+        shm_stream::no_wait_stream::remove(stream_name);
+
+        CHECK_FALSE(boost::interprocess::shared_memory_object::remove(
+            ("shm_stream_no_wait_stream_data_" + stream_name).c_str()));
+        CHECK_FALSE(boost::interprocess::named_mutex::remove(
+            ("shm_stream_no_wait_stream_lock_" + stream_name).c_str()));
+    }
+
+    boost::interprocess::shared_memory_object::remove(
+        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+    boost::interprocess::named_mutex::remove(
+        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+}

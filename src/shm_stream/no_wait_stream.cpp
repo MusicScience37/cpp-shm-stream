@@ -329,4 +329,27 @@ void no_wait_stream_reader::commit(shm_stream_size_t read_size) noexcept {
     impl_->reader.commit(read_size);
 }
 
+namespace no_wait_stream {
+
+void create(string_view name, shm_stream_size_t buffer_size) {
+    (void)details::prepare_no_wait_stream_data(name, buffer_size);
+}
+
+void remove(string_view name) {
+    const std::string mutex_name = details::no_wait_stream_mutex_name(name);
+    {
+        boost::interprocess::named_mutex mutex{
+            boost::interprocess::open_or_create, mutex_name.c_str()};
+        {
+            std::unique_lock<boost::interprocess::named_mutex> lock(mutex);
+
+            boost::interprocess::shared_memory_object::remove(
+                details::no_wait_stream_shm_name(name).c_str());
+        }
+    }
+    boost::interprocess::named_mutex::remove(mutex_name.c_str());
+}
+
+}  // namespace no_wait_stream
+
 }  // namespace shm_stream
