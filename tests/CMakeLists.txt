@@ -49,5 +49,5 @@ endif()
 option(${UPPER_PROJECT_NAME}_ENABLE_BENCH
        "enable benchmarks of ${FULL_PROJECT_NAME}" OFF)
 if(${UPPER_PROJECT_NAME}_ENABLE_BENCH)
-    # add_subdirectory(bench)
+    add_subdirectory(bench)
 endif()

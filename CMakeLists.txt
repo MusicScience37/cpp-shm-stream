@@ -57,6 +57,8 @@ find_package(Boost REQUIRED)
 find_package(fmt REQUIRED)
 if(${UPPER_PROJECT_NAME}_TESTING)
     find_package(Catch2 REQUIRED)
+    find_package(cpp_stat_bench REQUIRED)
+    find_package(Threads REQUIRED)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS
