@@ -32,7 +32,6 @@ STAT_BENCH_CASE_F(
     using shm_stream::no_wait_stream_reader;
     using shm_stream::no_wait_stream_writer;
     using shm_stream::shm_stream_size_t;
-    using shm_stream_test::generate_data;
 
     const std::string& data = this->get_data();
     const std::size_t data_size = data.size();
