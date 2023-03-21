@@ -11,6 +11,7 @@ variables:
   CONAN_PACKAGE_NAME: "cpp-shm-stream"
   CONAN_USER: "MusicScience37"
   SECURE_LOG_LEVEL: debug
+  CPP_STAT_BENCH_CONAN_REGISTRY: "https://gitlab.com/api/v4/projects/32226502/packages/conan"
 
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
@@ -114,6 +115,7 @@ test release:
     - cd $BUILD_DIR
     - poetry run conan profile new --force --detect default
     - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
+    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
     - poetry run conan install --build missing -s build_type=$BUILD_TYPE -o requirements_for_tests=True ..
     - cd ../
   script:
@@ -287,6 +289,7 @@ clang-13-asan-ubsan:
     - poetry install
     - poetry run conan profile new --force --detect default
     - poetry run conan profile update settings.compiler.libcxx=libc++ default
+    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
     - poetry run conan create --build missing --test-folder tests/conan_package . ${CONAN_USER}/${CONAN_CHANNEL}
   interruptible: true
 
@@ -304,6 +307,7 @@ clang-13-asan-ubsan:
     - poetry install
     - poetry run conan profile new --force --detect default
     - poetry run conan profile update settings.compiler.libcxx=libc++ default
+    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
     - poetry run conan remote add -f cpp-shm-stream https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/conan
     - poetry run conan create --build missing --test-folder tests/conan_package . ${CONAN_USER}/${CONAN_CHANNEL}
     - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} poetry run conan upload -r cpp-shm-stream ${CONAN_PACKAGE_NAME} -c --all
@@ -329,6 +333,7 @@ doc:
     - cd $BUILD_DIR
     - poetry run conan profile new --force --detect default
     - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
+    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
     - poetry run conan install --build missing -s build_type=$BUILD_TYPE ..
     - cd ../
   script:
