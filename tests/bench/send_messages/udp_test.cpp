@@ -99,3 +99,23 @@ STAT_BENCH_CASE_F(
         client_socket.send(boost::asio::const_buffer(data.data(), data.size()));
     };
 }
+
+STAT_BENCH_CASE_F(
+    shm_stream_test::send_messages_fixture, "send_messages", "UDPv6") {
+    const std::string& data = this->get_data();
+    const std::size_t data_size = data.size();
+
+    const std::uint16_t server_port = 12345;
+    const auto server_endpoint = boost::asio::ip::udp::endpoint(
+        boost::asio::ip::address_v6::loopback(), server_port);
+
+    udp_server server{server_endpoint, data_size};
+
+    boost::asio::io_context client_context{1};
+    boost::asio::ip::udp::socket client_socket{client_context};
+    client_socket.connect(server_endpoint);
+
+    STAT_BENCH_MEASURE() {
+        client_socket.send(boost::asio::const_buffer(data.data(), data.size()));
+    };
+}
