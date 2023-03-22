@@ -25,5 +25,8 @@ def test_send_data(no_wait_writer: pathlib.Path, no_wait_reader: pathlib.Path) -
         reader_process.terminate()
         reader_process.wait(timeout=5)
 
+    assert writer_process.returncode == 0
+    assert reader_process.returncode == 0
+
     stdout, _ = reader_future.result(timeout=5)
     assert stdout == data

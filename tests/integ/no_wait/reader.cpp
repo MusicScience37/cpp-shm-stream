@@ -15,7 +15,7 @@
  */
 /*!
  * \file
- * \brief Implementation of writer of streams of bytes without waiting.
+ * \brief Implementation of reader of streams of bytes without waiting.
  */
 #include <atomic>
 #include <csignal>
@@ -50,6 +50,7 @@ int main() {
             const auto buffer = reader.try_reserve();
             if (buffer.empty()) {
                 if (is_stopped.load(std::memory_order_relaxed)) {
+                    shm_stream::no_wait_stream::remove(stream_name);
                     return 0;
                 }
                 std::fflush(stdout);
