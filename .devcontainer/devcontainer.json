@@ -22,7 +22,8 @@
         "lextudio.restructuredtext",
         "trond-snekvik.simple-rst",
         "ms-azuretools.vscode-docker",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml"
       ],
       "settings": {
         "cmakeFormat.exePath": "/workspaces/cpp-shm-stream/.venv/bin/cmake-format",
