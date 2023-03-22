@@ -6,6 +6,7 @@
   "language": "en",
   // words - list of words to be always considered correct
   "words": [
+    "addoption",
     "alloc",
     "asan",
     "ausan",
@@ -66,6 +67,8 @@
     "puml",
     "pyenv",
     "pylint",
+    "pytest",
+    "pytestconfig",
     "realpath",
     "SAST",
     "sphinxcontrib",

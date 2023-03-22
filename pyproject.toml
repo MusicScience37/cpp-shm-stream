@@ -25,6 +25,7 @@ sphinx-rtd-theme = "^1.1.1"
 sphinxcontrib-plantuml = "^0.24.1"
 clang-tidy-checker = "^0.1.2"
 lcov_cobertura = "^2.0.2"
+pytest = "^7.2.2"
 
 [build-system]
 requires = ["poetry-core"]
