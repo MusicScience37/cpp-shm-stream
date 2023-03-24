@@ -15,8 +15,8 @@
  */
 /*!
  * \file
- * \brief Definition of streams of bytes without waiting (possibly lock-free and
- * wait-free).
+ * \brief Definition of light streams of bytes without waiting (possibly
+ * lock-free and wait-free).
  */
 #pragma once
 
@@ -33,39 +33,39 @@
 namespace shm_stream {
 
 /*!
- * \brief Class of writer of streams of bytes without waiting (possibly
+ * \brief Class of writer of light streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-class no_wait_stream_writer {
+class light_stream_writer {
 public:
     /*!
      * \brief Constructor.
      */
-    no_wait_stream_writer() = default;
+    light_stream_writer() = default;
 
     // Prevent copy.
-    no_wait_stream_writer(const no_wait_stream_writer&) = delete;
-    auto operator=(const no_wait_stream_writer&) = delete;
+    light_stream_writer(const light_stream_writer&) = delete;
+    auto operator=(const light_stream_writer&) = delete;
 
     /*!
      * \brief Move constructor.
      */
-    no_wait_stream_writer(no_wait_stream_writer&& /*obj*/) noexcept = default;
+    light_stream_writer(light_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    no_wait_stream_writer& operator=(
-        no_wait_stream_writer&& /*obj*/) noexcept = default;
+    light_stream_writer& operator=(
+        light_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Destructor.
      *
      * \note This function will automatically close this stream.
      */
-    ~no_wait_stream_writer() noexcept = default;
+    ~light_stream_writer() noexcept = default;
 
     /*!
      * \brief Open a stream.
@@ -159,26 +159,26 @@ private:
 };
 
 /*!
- * \brief Class of reader of streams of bytes without waiting (possibly
+ * \brief Class of reader of light streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-class SHM_STREAM_EXPORT no_wait_stream_reader {
+class SHM_STREAM_EXPORT light_stream_reader {
 public:
     /*!
      * \brief Constructor.
      */
-    no_wait_stream_reader();
+    light_stream_reader();
 
     // Prevent copy.
-    no_wait_stream_reader(const no_wait_stream_reader&) = delete;
-    auto operator=(const no_wait_stream_reader&) = delete;
+    light_stream_reader(const light_stream_reader&) = delete;
+    auto operator=(const light_stream_reader&) = delete;
 
     /*!
      * \brief Move constructor.
      *
      * \param[in] obj Object to move from.
      */
-    no_wait_stream_reader(no_wait_stream_reader&& obj) noexcept;
+    light_stream_reader(light_stream_reader&& obj) noexcept;
 
     /*!
      * \brief Move assignment operator.
@@ -186,14 +186,14 @@ public:
      * \param[in] obj Object to move from.
      * \return This.
      */
-    no_wait_stream_reader& operator=(no_wait_stream_reader&& obj) noexcept;
+    light_stream_reader& operator=(light_stream_reader&& obj) noexcept;
 
     /*!
      * \brief Destructor.
      *
      * \note This function will automatically close this stream.
      */
-    ~no_wait_stream_reader() noexcept;
+    ~light_stream_reader() noexcept;
 
     /*!
      * \brief Open a stream.
@@ -273,22 +273,22 @@ private:
 };
 
 /*!
- * \brief Classes and functions of streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Classes and functions of light streams of bytes without waiting
+ * (possibly lock-free and wait-free).
  */
-namespace no_wait_stream {
+namespace light_stream {
 
 /*!
  * \brief Class of writer of streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-using writer = no_wait_stream_writer;
+using writer = light_stream_writer;
 
 /*!
  * \brief Class of reader of streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-using reader = no_wait_stream_reader;
+using reader = light_stream_reader;
 
 /*!
  * \brief Create a stream.
@@ -311,6 +311,6 @@ void remove(string_view name) {
         c_shm_stream_string_view_t{name.data(), name.size()});
 }
 
-}  // namespace no_wait_stream
+}  // namespace light_stream
 
 }  // namespace shm_stream

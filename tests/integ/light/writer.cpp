@@ -29,11 +29,11 @@
 
 #include "common_def.h"
 #include "shm_stream/common_types.h"
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 int main() {
     try {
-        shm_stream::no_wait_stream_writer writer;
+        shm_stream::light_stream_writer writer;
         writer.open(stream_name, buffer_size);
 
         std::string line;

@@ -15,9 +15,9 @@
  */
 /*!
  * \file
- * \brief Test of no_wait_bytes_queue class.
+ * \brief Test of light_bytes_queue class.
  */
-#include "shm_stream/details/no_wait_bytes_queue.h"
+#include "shm_stream/details/light_bytes_queue.h"
 
 #include <array>
 
@@ -28,15 +28,15 @@
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
 
-TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
+TEST_CASE("shm_stream::details::light_bytes_queue_writer") {
     using shm_stream::mutable_bytes_view;
     using shm_stream::shm_stream_size_t;
-    using shm_stream::details::no_wait_bytes_queue_writer;
+    using shm_stream::details::light_bytes_queue_writer;
 
     using atomic_type = boost::atomics::ipc_atomic<shm_stream_size_t>;
     using atomic_index_pair_type =
         shm_stream::details::atomic_index_pair<atomic_type>;
-    using writer_type = no_wait_bytes_queue_writer<atomic_type>;
+    using writer_type = light_bytes_queue_writer<atomic_type>;
 
     SECTION("check size in constructor") {
         atomic_index_pair_type indices;
@@ -234,15 +234,15 @@ TEST_CASE("shm_stream::details::no_wait_bytes_queue_writer") {
     }
 }
 
-TEST_CASE("shm_stream::details::no_wait_bytes_queue_reader") {
+TEST_CASE("shm_stream::details::light_bytes_queue_reader") {
     using shm_stream::bytes_view;
     using shm_stream::shm_stream_size_t;
-    using shm_stream::details::no_wait_bytes_queue_reader;
+    using shm_stream::details::light_bytes_queue_reader;
 
     using atomic_type = boost::atomics::ipc_atomic<shm_stream_size_t>;
     using atomic_index_pair_type =
         shm_stream::details::atomic_index_pair<atomic_type>;
-    using reader_type = no_wait_bytes_queue_reader<atomic_type>;
+    using reader_type = light_bytes_queue_reader<atomic_type>;
 
     SECTION("check size in constructor") {
         atomic_index_pair_type indices;

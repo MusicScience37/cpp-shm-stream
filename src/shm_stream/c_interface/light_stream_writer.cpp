@@ -27,7 +27,7 @@
 #include "shm_stream/c_interface/bytes_view.h"
 #include "shm_stream/c_interface/translate_error.h"
 #include "shm_stream/common_types.h"
-#include "shm_stream/details/no_wait_bytes_queue.h"
+#include "shm_stream/details/light_bytes_queue.h"
 #include "shm_stream/string_view.h"
 
 /*!
@@ -42,7 +42,7 @@ struct c_shm_stream_light_stream_writer {
     boost::interprocess::mapped_region mapped_region;
 
     //! Writer.
-    shm_stream::details::no_wait_bytes_queue_writer<> writer;
+    shm_stream::details::light_bytes_queue_writer<> writer;
 
     /*!
      * \brief Constructor.

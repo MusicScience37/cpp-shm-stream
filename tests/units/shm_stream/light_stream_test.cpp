@@ -17,24 +17,24 @@
  * \file
  * \brief Test of streams of bytes without waiting (possibly lock-free).
  */
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("shm_stream::no_wait_stream_writer") {
-    using shm_stream::no_wait_stream_writer;
+TEST_CASE("shm_stream::light_stream_writer") {
+    using shm_stream::light_stream_writer;
     using shm_stream::shm_stream_size_t;
 
-    const std::string stream_name = "no_wait_stream_writer_test";
+    const std::string stream_name = "light_stream_writer_test";
     boost::interprocess::shared_memory_object::remove(
         ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
         ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("open a stream") {
-        no_wait_stream_writer writer;
+        light_stream_writer writer;
         CHECK_FALSE(writer.is_opened());
 
         constexpr shm_stream_size_t buffer_size = 10U;
@@ -43,12 +43,12 @@ TEST_CASE("shm_stream::no_wait_stream_writer") {
     }
 
     SECTION("move construct") {
-        no_wait_stream_writer writer;
+        light_stream_writer writer;
         constexpr shm_stream_size_t buffer_size = 10U;
         writer.open(stream_name, buffer_size);
         CHECK(writer.is_opened());
 
-        no_wait_stream_writer moved{std::move(writer)};
+        light_stream_writer moved{std::move(writer)};
         CHECK(moved.is_opened());
         CHECK_FALSE(writer.is_opened());  // NOLINT
     }
@@ -59,18 +59,18 @@ TEST_CASE("shm_stream::no_wait_stream_writer") {
         ("shm_stream_light_stream_lock_" + stream_name).c_str());
 }
 
-TEST_CASE("shm_stream::no_wait_stream_reader") {
-    using shm_stream::no_wait_stream_reader;
+TEST_CASE("shm_stream::light_stream_reader") {
+    using shm_stream::light_stream_reader;
     using shm_stream::shm_stream_size_t;
 
-    const std::string stream_name = "no_wait_stream_reader_test";
+    const std::string stream_name = "light_stream_reader_test";
     boost::interprocess::shared_memory_object::remove(
         ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
         ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("open a stream") {
-        no_wait_stream_reader writer;
+        light_stream_reader writer;
         CHECK_FALSE(writer.is_opened());
 
         constexpr shm_stream_size_t buffer_size = 10U;
@@ -79,12 +79,12 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
     }
 
     SECTION("move construct") {
-        no_wait_stream_reader writer;
+        light_stream_reader writer;
         constexpr shm_stream_size_t buffer_size = 10U;
         writer.open(stream_name, buffer_size);
         CHECK(writer.is_opened());
 
-        no_wait_stream_reader moved{std::move(writer)};
+        light_stream_reader moved{std::move(writer)};
         CHECK(moved.is_opened());
         CHECK_FALSE(writer.is_opened());  // NOLINT
     }
@@ -95,10 +95,10 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
         ("shm_stream_light_stream_lock_" + stream_name).c_str());
 }
 
-TEST_CASE("shm_stream::no_wait_stream") {
+TEST_CASE("shm_stream::light_stream") {
     using shm_stream::shm_stream_size_t;
 
-    const std::string stream_name = "no_wait_stream_reader_test";
+    const std::string stream_name = "light_stream_reader_test";
 
     boost::interprocess::shared_memory_object::remove(
         ("shm_stream_light_stream_data_" + stream_name).c_str());
@@ -107,7 +107,7 @@ TEST_CASE("shm_stream::no_wait_stream") {
 
     SECTION("create a stream") {
         constexpr shm_stream_size_t buffer_size = 10U;
-        shm_stream::no_wait_stream::create(stream_name, buffer_size);
+        shm_stream::light_stream::create(stream_name, buffer_size);
 
         CHECK(boost::interprocess::shared_memory_object::remove(
             ("shm_stream_light_stream_data_" + stream_name).c_str()));
@@ -117,8 +117,8 @@ TEST_CASE("shm_stream::no_wait_stream") {
 
     SECTION("remove a stream") {
         constexpr shm_stream_size_t buffer_size = 10U;
-        shm_stream::no_wait_stream::create(stream_name, buffer_size);
-        shm_stream::no_wait_stream::remove(stream_name);
+        shm_stream::light_stream::create(stream_name, buffer_size);
+        shm_stream::light_stream::remove(stream_name);
 
         CHECK_FALSE(boost::interprocess::shared_memory_object::remove(
             ("shm_stream_light_stream_data_" + stream_name).c_str()));

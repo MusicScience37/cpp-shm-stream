@@ -21,6 +21,6 @@
 
 #include "shm_stream/common_types.h"
 
-static constexpr const char* stream_name = "shm_stream_test_integ_no_wait";
+static constexpr const char* stream_name = "shm_stream_test_integ_light";
 
 static constexpr shm_stream::shm_stream_size_t buffer_size = 10;

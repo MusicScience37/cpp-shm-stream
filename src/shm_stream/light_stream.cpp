@@ -18,7 +18,7 @@
  * \brief Implementation of streams of bytes without waiting (possibly
  * lock-free).
  */
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 #include <mutex>
 #include <string>
@@ -34,7 +34,7 @@
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
 #include "shm_stream/details/cache_line_size.h"
-#include "shm_stream/details/no_wait_bytes_queue.h"
+#include "shm_stream/details/light_bytes_queue.h"
 
 namespace shm_stream {
 
@@ -42,7 +42,7 @@ namespace details {
 
 /*!
  * \brief Header of the data shared between no_wait_stream_writer and
- * no_wait_stream_reader.
+ * light_stream_reader.
  */
 struct no_wait_stream_header {
     //! Atomic variables of indices.
@@ -56,7 +56,7 @@ static_assert(sizeof(no_wait_stream_header) == 3U * cache_line_size(),
     "Unexpected size of no_wait_stream_header.");
 
 /*!
- * \brief Data of no_wait_stream_writer and no_wait_stream_reader.
+ * \brief Data of no_wait_stream_writer and light_stream_reader.
  */
 struct no_wait_stream_data {
     //! Shared memory object.
@@ -97,7 +97,7 @@ struct no_wait_stream_data {
 
 /*!
  * \brief Create and initialize data of no_wait_stream_writer and
- * no_wait_stream_reader.
+ * light_stream_reader.
  *
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
@@ -136,7 +136,7 @@ struct no_wait_stream_data {
 }
 
 /*!
- * \brief Prepare data of no_wait_stream_writer and no_wait_stream_reader.
+ * \brief Prepare data of no_wait_stream_writer and light_stream_reader.
  *
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
@@ -177,7 +177,7 @@ struct no_wait_stream_data {
 }  // namespace details
 
 //! Type of the internal data.
-struct no_wait_stream_reader::impl_type {
+struct light_stream_reader::impl_type {
     //! Shared memory object.
     boost::interprocess::shared_memory_object shared_memory;
 
@@ -185,7 +185,7 @@ struct no_wait_stream_reader::impl_type {
     boost::interprocess::mapped_region mapped_region;
 
     //! Reader.
-    details::no_wait_bytes_queue_reader<> reader;
+    details::light_bytes_queue_reader<> reader;
 
     /*!
      * \brief Constructor.
@@ -198,28 +198,27 @@ struct no_wait_stream_reader::impl_type {
           reader(*data.atomic_indices, data.buffer) {}
 };
 
-no_wait_stream_reader::no_wait_stream_reader() : impl_(nullptr) {}
+light_stream_reader::light_stream_reader() : impl_(nullptr) {}
 
-no_wait_stream_reader::no_wait_stream_reader(
-    no_wait_stream_reader&& obj) noexcept
+light_stream_reader::light_stream_reader(light_stream_reader&& obj) noexcept
     : impl_(std::exchange(obj.impl_, nullptr)) {}
 
-no_wait_stream_reader& no_wait_stream_reader::operator=(
-    no_wait_stream_reader&& obj) noexcept {
+light_stream_reader& light_stream_reader::operator=(
+    light_stream_reader&& obj) noexcept {
     std::swap(this->impl_, obj.impl_);
     return *this;
 }
 
-no_wait_stream_reader::~no_wait_stream_reader() noexcept { close(); }
+light_stream_reader::~light_stream_reader() noexcept { close(); }
 
-void no_wait_stream_reader::open(
+void light_stream_reader::open(
     string_view name, shm_stream_size_t buffer_size) {
     close();
     impl_ =
         new impl_type(details::prepare_no_wait_stream_data(name, buffer_size));
 }
 
-void no_wait_stream_reader::close() noexcept {
+void light_stream_reader::close() noexcept {
     if (impl_ == nullptr) {
         return;
     }
@@ -227,18 +226,18 @@ void no_wait_stream_reader::close() noexcept {
     impl_ = nullptr;
 }
 
-bool no_wait_stream_reader::is_opened() const noexcept {
+bool light_stream_reader::is_opened() const noexcept {
     return impl_ != nullptr;
 }
 
-shm_stream_size_t no_wait_stream_reader::available_size() const noexcept {
+shm_stream_size_t light_stream_reader::available_size() const noexcept {
     if (impl_ == nullptr) {
         return 0U;
     }
     return impl_->reader.available_size();
 }
 
-bytes_view no_wait_stream_reader::try_reserve(
+bytes_view light_stream_reader::try_reserve(
     shm_stream_size_t expected_size) noexcept {
     if (impl_ == nullptr) {
         return bytes_view(nullptr, 0U);
@@ -246,14 +245,14 @@ bytes_view no_wait_stream_reader::try_reserve(
     return impl_->reader.try_reserve(expected_size);
 }
 
-bytes_view no_wait_stream_reader::try_reserve() noexcept {
+bytes_view light_stream_reader::try_reserve() noexcept {
     if (impl_ == nullptr) {
         return bytes_view(nullptr, 0U);
     }
     return impl_->reader.try_reserve();
 }
 
-void no_wait_stream_reader::commit(shm_stream_size_t read_size) noexcept {
+void light_stream_reader::commit(shm_stream_size_t read_size) noexcept {
     if (impl_ == nullptr) {
         return;
     }

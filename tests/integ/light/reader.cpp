@@ -26,7 +26,7 @@
 #include <fmt/format.h>
 
 #include "common_def.h"
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 extern "C" void on_signal(int /*number*/);
 
@@ -41,16 +41,16 @@ int main() {
         std::signal(SIGINT, on_signal);
         std::signal(SIGTERM, on_signal);
 
-        shm_stream::no_wait_stream::remove(stream_name);
+        shm_stream::light_stream::remove(stream_name);
 
-        shm_stream::no_wait_stream_reader reader;
+        shm_stream::light_stream_reader reader;
         reader.open(stream_name, buffer_size);
 
         while (true) {
             const auto buffer = reader.try_reserve();
             if (buffer.empty()) {
                 if (is_stopped.load(std::memory_order_relaxed)) {
-                    shm_stream::no_wait_stream::remove(stream_name);
+                    shm_stream::light_stream::remove(stream_name);
                     return 0;
                 }
                 std::fflush(stdout);
