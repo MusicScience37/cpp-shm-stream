@@ -15,20 +15,32 @@
  */
 /*!
  * \file
- * \brief Definition of common types.
+ * \brief Definition of c_shm_stream_string_view struct.
  */
 #pragma once
 
-#include "shm_stream/c_interface/common_types.h"
+#include <stddef.h>
 
-namespace shm_stream {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*!
- * \brief Type of sizes used in this library.
- *
- * \note For compatibility of data shared between processes, I defined this type
- * with a fixed size.
+ * \brief Struct of views of strings.
  */
-using shm_stream_size_t = c_shm_stream_size_t;
+struct c_shm_stream_string_view {
+    //! Pointer to data.
+    const char* data;
 
-}  // namespace shm_stream
+    //! Size of data.
+    size_t size;
+};
+
+/*!
+ * \brief Struct of views of strings.
+ */
+typedef struct c_shm_stream_string_view c_shm_stream_string_view_t;
+
+#ifdef __cplusplus
+}
+#endif

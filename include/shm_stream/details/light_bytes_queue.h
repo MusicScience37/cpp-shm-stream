@@ -29,6 +29,7 @@
 #include <fmt/format.h>
 
 #include "shm_stream/bytes_view.h"
+#include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
 #include "shm_stream/shm_stream_assert.h"
@@ -46,7 +47,7 @@ namespace details {
  * \thread_safety All operation is safe if only one writer exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
-class no_wait_bytes_queue_writer {
+class light_bytes_queue_writer {
 public:
     //! Type of the atomic variables.
     using atomic_type = AtomicType;
@@ -93,8 +94,7 @@ public:
      * bytes for the writer and the reader.
      * \param[in] buffer Buffer of data.
      */
-    no_wait_bytes_queue_writer(
-        atomic_index_pair_view<atomic_type> atomic_indices,
+    light_bytes_queue_writer(atomic_index_pair_view<atomic_type> atomic_indices,
         mutable_bytes_view buffer)
         : atomic_next_read_index_(&atomic_indices.reader()),
           atomic_next_write_index_(&atomic_indices.writer()),
@@ -109,9 +109,7 @@ public:
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
-            throw invalid_argument(fmt::format(
-                "Invalid buffer size. (min: {}, max: {}, actual: {})",
-                min_size(), max_size(), size_));
+            throw shm_stream_error(c_shm_stream_error_code_invalid_argument);
         }
 
         next_write_index_ =
@@ -119,22 +117,22 @@ public:
     }
 
     // Prevent copy.
-    no_wait_bytes_queue_writer(const no_wait_bytes_queue_writer&) = delete;
-    auto operator=(const no_wait_bytes_queue_writer&) = delete;
+    light_bytes_queue_writer(const light_bytes_queue_writer&) = delete;
+    auto operator=(const light_bytes_queue_writer&) = delete;
 
     //! Move constructor.
-    no_wait_bytes_queue_writer(no_wait_bytes_queue_writer&&) noexcept = default;
+    light_bytes_queue_writer(light_bytes_queue_writer&&) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    auto operator=(no_wait_bytes_queue_writer&&) noexcept
-        -> no_wait_bytes_queue_writer& = default;
+    auto operator=(light_bytes_queue_writer&&) noexcept
+        -> light_bytes_queue_writer& = default;
 
     //! Destructor.
-    ~no_wait_bytes_queue_writer() noexcept = default;
+    ~light_bytes_queue_writer() noexcept = default;
 
     /*!
      * \brief Get the size of the available bytes to write.
@@ -246,7 +244,7 @@ private:
  * \thread_safety All operation is safe if only one writer exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
-class no_wait_bytes_queue_reader {
+class light_bytes_queue_reader {
 public:
     //! Type of the atomic variables.
     using atomic_type = AtomicType;
@@ -293,7 +291,7 @@ public:
      * bytes for the writer and the reader.
      * \param[in] buffer Buffer of data.
      */
-    no_wait_bytes_queue_reader(
+    light_bytes_queue_reader(
         atomic_index_pair_view<atomic_type> atomic_indices, bytes_view buffer)
         : atomic_next_read_index_(&atomic_indices.reader()),
           atomic_next_write_index_(&atomic_indices.writer()),
@@ -308,9 +306,7 @@ public:
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
-            throw invalid_argument(fmt::format(
-                "Invalid buffer size. (min: {}, max: {}, actual: {})",
-                min_size(), max_size(), size_));
+            throw shm_stream_error(c_shm_stream_error_code_invalid_argument);
         }
 
         next_read_index_ =
@@ -318,22 +314,22 @@ public:
     }
 
     // Prevent copy.
-    no_wait_bytes_queue_reader(const no_wait_bytes_queue_reader&) = delete;
-    auto operator=(const no_wait_bytes_queue_reader&) = delete;
+    light_bytes_queue_reader(const light_bytes_queue_reader&) = delete;
+    auto operator=(const light_bytes_queue_reader&) = delete;
 
     //! Move constructor.
-    no_wait_bytes_queue_reader(no_wait_bytes_queue_reader&&) noexcept = default;
+    light_bytes_queue_reader(light_bytes_queue_reader&&) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    auto operator=(no_wait_bytes_queue_reader&&) noexcept
-        -> no_wait_bytes_queue_reader& = default;
+    auto operator=(light_bytes_queue_reader&&) noexcept
+        -> light_bytes_queue_reader& = default;
 
     //! Destructor.
-    ~no_wait_bytes_queue_reader() noexcept = default;
+    ~light_bytes_queue_reader() noexcept = default;
 
     /*!
      * \brief Get the size of the available bytes to read.

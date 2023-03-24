@@ -20,10 +20,10 @@ def bin_dir(build_dir: pathlib.Path) -> pathlib.Path:
 
 
 @pytest.fixture
-def no_wait_writer(bin_dir: pathlib.Path) -> pathlib.Path:
-    return bin_dir / "test_integ_no_wait_writer"
+def light_writer(bin_dir: pathlib.Path) -> pathlib.Path:
+    return bin_dir / "test_integ_light_writer"
 
 
 @pytest.fixture
-def no_wait_reader(bin_dir: pathlib.Path) -> pathlib.Path:
-    return bin_dir / "test_integ_no_wait_reader"
+def light_reader(bin_dir: pathlib.Path) -> pathlib.Path:
+    return bin_dir / "test_integ_light_reader"

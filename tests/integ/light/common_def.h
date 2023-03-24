@@ -15,20 +15,12 @@
  */
 /*!
  * \file
- * \brief Definition of common types.
+ * \brief Common definitions between writers and readers.
  */
 #pragma once
 
-#include "shm_stream/c_interface/common_types.h"
+#include "shm_stream/common_types.h"
 
-namespace shm_stream {
+static constexpr const char* stream_name = "shm_stream_test_integ_light";
 
-/*!
- * \brief Type of sizes used in this library.
- *
- * \note For compatibility of data shared between processes, I defined this type
- * with a fixed size.
- */
-using shm_stream_size_t = c_shm_stream_size_t;
-
-}  // namespace shm_stream
+static constexpr shm_stream::shm_stream_size_t buffer_size = 10;

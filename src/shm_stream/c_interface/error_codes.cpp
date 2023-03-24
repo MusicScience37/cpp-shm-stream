@@ -15,12 +15,20 @@
  */
 /*!
  * \file
- * \brief Common definitions between writers and readers.
+ * \brief Implementation of functions for error codes in this library.
  */
-#pragma once
+#include "shm_stream/c_interface/error_codes.h"
 
-#include "shm_stream/common_types.h"
-
-static constexpr const char* stream_name = "shm_stream_test_integ_no_wait";
-
-static constexpr shm_stream::shm_stream_size_t buffer_size = 10;
+const char* c_shm_stream_error_message(c_shm_stream_error_code_t code) {
+    switch (code) {
+    case c_shm_stream_error_code_success:
+        return "Success.";
+    case c_shm_stream_error_code_invalid_argument:
+        return "Invalid argument.";
+    case c_shm_stream_error_code_failed_to_open:
+        return "Failed to create or open a stream.";
+    case c_shm_stream_error_code_internal_error:
+        return "Internal error.";
+    }
+    return "Invalid error code.";
+}

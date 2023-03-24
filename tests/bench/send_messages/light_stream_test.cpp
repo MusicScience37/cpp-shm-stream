@@ -17,7 +17,7 @@
  * \file
  * \brief Benchmark of streams of bytes without waiting.
  */
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 #include <atomic>
 #include <thread>
@@ -28,22 +28,22 @@
 #include "shm_stream/bytes_view.h"
 
 STAT_BENCH_CASE_F(
-    shm_stream_test::send_messages_fixture, "send_messages", "no_wait_stream") {
-    using shm_stream::no_wait_stream_reader;
-    using shm_stream::no_wait_stream_writer;
+    shm_stream_test::send_messages_fixture, "send_messages", "light_stream") {
+    using shm_stream::light_stream_reader;
+    using shm_stream::light_stream_writer;
     using shm_stream::shm_stream_size_t;
 
     const std::string& data = this->get_data();
     const std::size_t data_size = data.size();
     const std::size_t buffer_size = 10 * data_size;
 
-    const std::string stream_name = "no_wait_stream_test";
-    shm_stream::no_wait_stream::remove(stream_name);
+    const std::string stream_name = "light_stream_test";
+    shm_stream::light_stream::remove(stream_name);
 
-    no_wait_stream_writer writer;
+    light_stream_writer writer;
     writer.open(stream_name, buffer_size);
 
-    no_wait_stream_reader reader;
+    light_stream_reader reader;
     reader.open(stream_name, buffer_size);
 
     std::atomic<bool> is_running{true};

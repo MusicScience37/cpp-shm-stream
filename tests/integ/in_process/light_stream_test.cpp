@@ -17,7 +17,7 @@
  * \file
  * \brief Test of streams of bytes without waiting (possibly lock-free).
  */
-#include "shm_stream/no_wait_stream.h"
+#include "shm_stream/light_stream.h"
 
 #include <algorithm>
 #include <chrono>
@@ -32,18 +32,18 @@
 #include "shm_stream/common_types.h"
 #include "shm_stream_test/generate_data.h"
 
-TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
-    using shm_stream::no_wait_stream_reader;
-    using shm_stream::no_wait_stream_writer;
+TEST_CASE("light_stream_writer, light_stream_reader") {
+    using shm_stream::light_stream_reader;
+    using shm_stream::light_stream_writer;
     using shm_stream::shm_stream_size_t;
     using shm_stream_test::generate_data;
 
-    const std::string stream_name = "no_wait_stream_test";
-    shm_stream::no_wait_stream::remove(stream_name);
+    const std::string stream_name = "light_stream_test";
+    shm_stream::light_stream::remove(stream_name);
 
     SECTION("send data") {
-        no_wait_stream_writer writer;
-        no_wait_stream_reader reader;
+        light_stream_writer writer;
+        light_stream_reader reader;
 
         constexpr shm_stream_size_t buffer_size = 10U;
 
@@ -120,5 +120,5 @@ TEST_CASE("no_wait_stream_writer, no_wait_stream_reader") {
         CHECK(reader.available_size() == 0U);
     }
 
-    shm_stream::no_wait_stream::remove(stream_name);
+    shm_stream::light_stream::remove(stream_name);
 }

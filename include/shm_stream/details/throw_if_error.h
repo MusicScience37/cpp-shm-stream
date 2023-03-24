@@ -15,20 +15,27 @@
  */
 /*!
  * \file
- * \brief Definition of common types.
+ * \brief Definition of throw_if_error function.
  */
 #pragma once
 
-#include "shm_stream/c_interface/common_types.h"
+#include "shm_stream/c_interface/error_codes.h"
+#include "shm_stream/shm_stream_exception.h"
 
 namespace shm_stream {
+namespace details {
 
 /*!
- * \brief Type of sizes used in this library.
+ * \brief Check an error code and throw an exception if an error.
  *
- * \note For compatibility of data shared between processes, I defined this type
- * with a fixed size.
+ * \param[in] code Error code.
  */
-using shm_stream_size_t = c_shm_stream_size_t;
+void throw_if_error(c_shm_stream_error_code_t code) {
+    if (code == c_shm_stream_error_code_success) {
+        return;
+    }
+    throw shm_stream_error(code);
+}
 
+}  // namespace details
 }  // namespace shm_stream
