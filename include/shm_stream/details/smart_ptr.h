@@ -21,7 +21,6 @@
 
 #include <utility>
 
-#include <__utility/pair.h>
 namespace shm_stream {
 namespace details {
 
