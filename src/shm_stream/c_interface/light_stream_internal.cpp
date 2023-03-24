@@ -20,6 +20,9 @@
  */
 #include "light_stream_internal.h"
 
+#include "shm_stream/c_interface/error_codes.h"
+#include "shm_stream/shm_stream_exception.h"
+
 namespace shm_stream {
 namespace details {
 
@@ -36,9 +39,13 @@ light_stream_data create_and_initialize_light_stream_data(
     light_stream_data data{};
     const std::string data_shm_name = light_stream_shm_name(name);
 
-    data.shared_memory = boost::interprocess::shared_memory_object(
-        boost::interprocess::create_only, data_shm_name.c_str(),
-        boost::interprocess::read_write);
+    try {
+        data.shared_memory = boost::interprocess::shared_memory_object(
+            boost::interprocess::create_only, data_shm_name.c_str(),
+            boost::interprocess::read_write);
+    } catch (...) {
+        throw shm_stream_error(c_shm_stream_error_code_failed_to_open);
+    }
 
     const boost::interprocess::offset_t data_size =
         static_cast<boost::interprocess::offset_t>(
