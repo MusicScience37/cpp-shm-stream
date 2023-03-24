@@ -40,5 +40,5 @@
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "cSpell.enableFiletypes": ["cmake"]
+  "cSpell.enableFiletypes": ["cmake", "shellscript"]
 }
