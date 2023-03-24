@@ -20,18 +20,21 @@
 #pragma once
 
 #include "shm_stream/c_interface/error_codes.h"
+#include "shm_stream/shm_stream_exception.h"
 
 /*!
  * \brief Translate errors in C functions.
  */
-#define C_SHM_STREAM_TRANSLATE_ERROR(EXPRESSION)           \
-    do {                                                   \
-        try {                                              \
-            EXPRESSION;                                    \
-            return c_shm_stream_error_code_success;        \
-        } catch (...) {                                    \
-            return c_shm_stream_error_code_internal_error; \
-        }                                                  \
+#define C_SHM_STREAM_TRANSLATE_ERROR(EXPRESSION)            \
+    do {                                                    \
+        try {                                               \
+            EXPRESSION;                                     \
+            return c_shm_stream_error_code_success;         \
+        } catch (const ::shm_stream::shm_stream_error& e) { \
+            return e.code();                                \
+        } catch (...) {                                     \
+            return c_shm_stream_error_code_internal_error;  \
+        }                                                   \
     } while (false)
 
 /*!

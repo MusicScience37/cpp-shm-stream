@@ -32,6 +32,9 @@ enum c_shm_stream_error_code {
     //! No error.
     c_shm_stream_error_code_success = 0,
 
+    //! Invalid argument.
+    c_shm_stream_error_code_invalid_argument,
+
     //! Failed to create or open a stream.
     c_shm_stream_error_code_failed_to_open,
 

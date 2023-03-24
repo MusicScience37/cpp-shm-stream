@@ -29,6 +29,7 @@
 #include <fmt/format.h>
 
 #include "shm_stream/bytes_view.h"
+#include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
 #include "shm_stream/shm_stream_assert.h"
@@ -109,9 +110,7 @@ public:
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
-            throw invalid_argument(fmt::format(
-                "Invalid buffer size. (min: {}, max: {}, actual: {})",
-                min_size(), max_size(), size_));
+            throw shm_stream_error(c_shm_stream_error_code_invalid_argument);
         }
 
         next_write_index_ =
@@ -308,9 +307,7 @@ public:
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
-            throw invalid_argument(fmt::format(
-                "Invalid buffer size. (min: {}, max: {}, actual: {})",
-                min_size(), max_size(), size_));
+            throw shm_stream_error(c_shm_stream_error_code_invalid_argument);
         }
 
         next_read_index_ =

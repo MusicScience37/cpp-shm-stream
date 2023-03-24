@@ -23,6 +23,8 @@ const char* c_shm_stream_error_message(c_shm_stream_error_code_t code) {
     switch (code) {
     case c_shm_stream_error_code_success:
         return "Success.";
+    case c_shm_stream_error_code_invalid_argument:
+        return "Invalid argument.";
     case c_shm_stream_error_code_failed_to_open:
         return "Failed to create or open a stream.";
     case c_shm_stream_error_code_internal_error:

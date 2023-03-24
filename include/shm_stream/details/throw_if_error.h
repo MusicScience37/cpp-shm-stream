@@ -34,7 +34,7 @@ void throw_if_error(c_shm_stream_error_code_t code) {
     if (code == c_shm_stream_error_code_success) {
         return;
     }
-    throw c_shm_stream_error(code);
+    throw shm_stream_error(code);
 }
 
 }  // namespace details
