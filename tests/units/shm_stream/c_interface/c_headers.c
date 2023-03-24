@@ -21,5 +21,6 @@
 #include "shm_stream/c_interface/common_types.h"
 #include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/c_interface/light_stream_common.h"
+#include "shm_stream/c_interface/light_stream_reader.h"
 #include "shm_stream/c_interface/light_stream_writer.h"
 #include "shm_stream/c_interface/string_view.h"
