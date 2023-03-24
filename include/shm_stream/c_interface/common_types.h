@@ -19,9 +19,11 @@
  */
 #pragma once
 
-#include "shm_stream/c_interface/common_types.h"
+#include <stdint.h>
 
-namespace shm_stream {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*!
  * \brief Type of sizes used in this library.
@@ -29,6 +31,8 @@ namespace shm_stream {
  * \note For compatibility of data shared between processes, I defined this type
  * with a fixed size.
  */
-using shm_stream_size_t = c_shm_stream_size_t;
+typedef uint32_t c_shm_stream_size_t;
 
-}  // namespace shm_stream
+#ifdef __cplusplus
+}
+#endif

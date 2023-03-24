@@ -15,20 +15,18 @@
  */
 /*!
  * \file
- * \brief Definition of common types.
+ * \brief Implementation of functions for error codes in this library.
  */
-#pragma once
+#include "shm_stream/c_interface/error_codes.h"
 
-#include "shm_stream/c_interface/common_types.h"
-
-namespace shm_stream {
-
-/*!
- * \brief Type of sizes used in this library.
- *
- * \note For compatibility of data shared between processes, I defined this type
- * with a fixed size.
- */
-using shm_stream_size_t = c_shm_stream_size_t;
-
-}  // namespace shm_stream
+const char* c_shm_stream_error_message(c_shm_stream_error_code_t code) {
+    switch (code) {
+    case c_shm_stream_error_code_success:
+        return "Success.";
+    case c_shm_stream_error_code_failed_to_open:
+        return "Failed to create or open a stream.";
+    case c_shm_stream_error_code_internal_error:
+        return "Internal error.";
+    }
+    return "Invalid error code.";
+}

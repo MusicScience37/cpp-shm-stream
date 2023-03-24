@@ -15,20 +15,11 @@
  */
 /*!
  * \file
- * \brief Definition of common types.
+ * \brief Test of C headers.
  */
-#pragma once
-
+#include "shm_stream/c_interface/bytes_view.h"
 #include "shm_stream/c_interface/common_types.h"
-
-namespace shm_stream {
-
-/*!
- * \brief Type of sizes used in this library.
- *
- * \note For compatibility of data shared between processes, I defined this type
- * with a fixed size.
- */
-using shm_stream_size_t = c_shm_stream_size_t;
-
-}  // namespace shm_stream
+#include "shm_stream/c_interface/error_codes.h"
+#include "shm_stream/c_interface/light_stream_common.h"
+#include "shm_stream/c_interface/light_stream_writer.h"
+#include "shm_stream/c_interface/string_view.h"

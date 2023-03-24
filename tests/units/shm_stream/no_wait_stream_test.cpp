@@ -29,9 +29,9 @@ TEST_CASE("shm_stream::no_wait_stream_writer") {
 
     const std::string stream_name = "no_wait_stream_writer_test";
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("open a stream") {
         no_wait_stream_writer writer;
@@ -54,9 +54,9 @@ TEST_CASE("shm_stream::no_wait_stream_writer") {
     }
 
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 }
 
 TEST_CASE("shm_stream::no_wait_stream_reader") {
@@ -65,9 +65,9 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
 
     const std::string stream_name = "no_wait_stream_reader_test";
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("open a stream") {
         no_wait_stream_reader writer;
@@ -90,9 +90,9 @@ TEST_CASE("shm_stream::no_wait_stream_reader") {
     }
 
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 }
 
 TEST_CASE("shm_stream::no_wait_stream") {
@@ -101,18 +101,18 @@ TEST_CASE("shm_stream::no_wait_stream") {
     const std::string stream_name = "no_wait_stream_reader_test";
 
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("create a stream") {
         constexpr shm_stream_size_t buffer_size = 10U;
         shm_stream::no_wait_stream::create(stream_name, buffer_size);
 
         CHECK(boost::interprocess::shared_memory_object::remove(
-            ("shm_stream_no_wait_stream_data_" + stream_name).c_str()));
+            ("shm_stream_light_stream_data_" + stream_name).c_str()));
         CHECK(boost::interprocess::named_mutex::remove(
-            ("shm_stream_no_wait_stream_lock_" + stream_name).c_str()));
+            ("shm_stream_light_stream_lock_" + stream_name).c_str()));
     }
 
     SECTION("remove a stream") {
@@ -121,13 +121,13 @@ TEST_CASE("shm_stream::no_wait_stream") {
         shm_stream::no_wait_stream::remove(stream_name);
 
         CHECK_FALSE(boost::interprocess::shared_memory_object::remove(
-            ("shm_stream_no_wait_stream_data_" + stream_name).c_str()));
+            ("shm_stream_light_stream_data_" + stream_name).c_str()));
         CHECK_FALSE(boost::interprocess::named_mutex::remove(
-            ("shm_stream_no_wait_stream_lock_" + stream_name).c_str()));
+            ("shm_stream_light_stream_lock_" + stream_name).c_str()));
     }
 
     boost::interprocess::shared_memory_object::remove(
-        ("shm_stream_no_wait_stream_data_" + stream_name).c_str());
+        ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
-        ("shm_stream_no_wait_stream_lock_" + stream_name).c_str());
+        ("shm_stream_light_stream_lock_" + stream_name).c_str());
 }

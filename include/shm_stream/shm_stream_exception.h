@@ -21,6 +21,8 @@
 
 #include <stdexcept>
 
+#include "shm_stream/c_interface/error_codes.h"
+
 namespace shm_stream {
 
 /*!
@@ -38,6 +40,22 @@ public:
 class invalid_argument : public shm_stream_exception {
 public:
     using shm_stream_exception::shm_stream_exception;
+    using shm_stream_exception::what;
+};
+
+/*!
+ * \brief Class of errors in C interface.
+ */
+class c_shm_stream_error : public shm_stream_exception {
+public:
+    /*!
+     * \brief Constructor.
+     *
+     * \param[in] code Error code.
+     */
+    explicit c_shm_stream_error(c_shm_stream_error_code_t code)
+        : shm_stream_exception(c_shm_stream_error_message(code)) {}
+
     using shm_stream_exception::what;
 };
 

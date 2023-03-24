@@ -21,8 +21,11 @@
 #pragma once
 
 #include "shm_stream/bytes_view.h"
+#include "shm_stream/c_interface/light_stream_common.h"
+#include "shm_stream/c_interface/string_view.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/shm_stream_export.h"
+#include "shm_stream/details/throw_if_error.h"
 #include "shm_stream/string_view.h"
 
 namespace shm_stream {
@@ -278,14 +281,20 @@ using reader = no_wait_stream_reader;
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
  */
-SHM_STREAM_EXPORT void create(string_view name, shm_stream_size_t buffer_size);
+void create(string_view name, shm_stream_size_t buffer_size) {
+    details::throw_if_error(c_shm_stream_light_stream_create(
+        c_shm_stream_string_view_t{name.data(), name.size()}, buffer_size));
+}
 
 /*!
  * \brief Remove a stream.
  *
  * \param[in] name Name of the stream.
  */
-SHM_STREAM_EXPORT void remove(string_view name);
+void remove(string_view name) {
+    c_shm_stream_light_stream_remove(
+        c_shm_stream_string_view_t{name.data(), name.size()});
+}
 
 }  // namespace no_wait_stream
 
