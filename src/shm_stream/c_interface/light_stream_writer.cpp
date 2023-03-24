@@ -25,10 +25,10 @@
 
 #include "light_stream_internal.h"
 #include "shm_stream/c_interface/bytes_view.h"
+#include "shm_stream/c_interface/translate_error.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/no_wait_bytes_queue.h"
 #include "shm_stream/string_view.h"
-#include "translate_error.h"
 
 /*!
  * \brief Writer of light streams of bytes without waiting (possibly

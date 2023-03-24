@@ -24,8 +24,8 @@
 #include "shm_stream/c_interface/common_types.h"
 #include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/c_interface/string_view.h"
+#include "shm_stream/c_interface/translate_error.h"
 #include "shm_stream/string_view.h"
-#include "translate_error.h"
 
 c_shm_stream_error_code_t c_shm_stream_light_stream_create(
     c_shm_stream_string_view_t name, c_shm_stream_size_t buffer_size) {
