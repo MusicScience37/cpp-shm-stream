@@ -22,9 +22,11 @@
 
 #include "shm_stream/bytes_view.h"
 #include "shm_stream/c_interface/light_stream_common.h"
+#include "shm_stream/c_interface/light_stream_writer.h"
 #include "shm_stream/c_interface/string_view.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/shm_stream_export.h"
+#include "shm_stream/details/smart_ptr.h"
 #include "shm_stream/details/throw_if_error.h"
 #include "shm_stream/string_view.h"
 
@@ -34,12 +36,12 @@ namespace shm_stream {
  * \brief Class of writer of streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-class SHM_STREAM_EXPORT no_wait_stream_writer {
+class no_wait_stream_writer {
 public:
     /*!
      * \brief Constructor.
      */
-    no_wait_stream_writer();
+    no_wait_stream_writer() = default;
 
     // Prevent copy.
     no_wait_stream_writer(const no_wait_stream_writer&) = delete;
@@ -47,25 +49,23 @@ public:
 
     /*!
      * \brief Move constructor.
-     *
-     * \param[in] obj Object to move from.
      */
-    no_wait_stream_writer(no_wait_stream_writer&& obj) noexcept;
+    no_wait_stream_writer(no_wait_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
-     * \param[in] obj Object to move from.
      * \return This.
      */
-    no_wait_stream_writer& operator=(no_wait_stream_writer&& obj) noexcept;
+    no_wait_stream_writer& operator=(
+        no_wait_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Destructor.
      *
      * \note This function will automatically close this stream.
      */
-    ~no_wait_stream_writer() noexcept;
+    ~no_wait_stream_writer() noexcept = default;
 
     /*!
      * \brief Open a stream.
@@ -73,7 +73,13 @@ public:
      * \param[in] name Name of the stream.
      * \param[in] buffer_size Size of the buffer.
      */
-    void open(string_view name, shm_stream_size_t buffer_size);
+    void open(string_view name, shm_stream_size_t buffer_size) {
+        c_shm_stream_light_stream_writer_t* writer{nullptr};
+        details::throw_if_error(c_shm_stream_light_stream_writer_create(&writer,
+            c_shm_stream_string_view_t{name.data(), name.size()}, buffer_size));
+        writer_ = details::smart_ptr<c_shm_stream_light_stream_writer_t>(
+            writer, c_shm_stream_light_stream_writer_destroy);
+    }
 
     /*!
      * \brief Close a stream.
@@ -81,7 +87,7 @@ public:
      * \note This function can be called when this stream has been already
      * closed.
      */
-    void close() noexcept;
+    void close() noexcept { writer_.reset(); }
 
     /*!
      * \brief Check whether this object is opened.
@@ -89,14 +95,16 @@ public:
      * \retval true This object is opened.
      * \retval false This object is not opened.
      */
-    [[nodiscard]] bool is_opened() const noexcept;
+    [[nodiscard]] bool is_opened() const noexcept { return writer_.has_obj(); }
 
     /*!
      * \brief Get the size of the available bytes to write.
      *
      * \return Size of the available bytes to write.
      */
-    [[nodiscard]] shm_stream_size_t available_size() const noexcept;
+    [[nodiscard]] shm_stream_size_t available_size() const noexcept {
+        return c_shm_stream_light_stream_writer_available_size(writer_.get());
+    }
 
     /*!
      * \brief Try to reserve some bytes to write.
@@ -112,7 +120,11 @@ public:
      * continuous byte sequences from the circular buffer.
      */
     [[nodiscard]] mutable_bytes_view try_reserve(
-        shm_stream_size_t expected_size) noexcept;
+        shm_stream_size_t expected_size) noexcept {
+        const auto buf = c_shm_stream_light_stream_writer_try_reserve(
+            writer_.get(), expected_size);
+        return mutable_bytes_view(buf.data, buf.size);
+    }
 
     /*!
      * \brief Try to reserve some bytes to write as many as possible.
@@ -126,21 +138,24 @@ public:
      * circular buffer in the implementation and this function reserves
      * continuous byte sequences from the circular buffer.
      */
-    [[nodiscard]] mutable_bytes_view try_reserve() noexcept;
+    [[nodiscard]] mutable_bytes_view try_reserve() noexcept {
+        const auto buf =
+            c_shm_stream_light_stream_writer_try_reserve_all(writer_.get());
+        return mutable_bytes_view(buf.data, buf.size);
+    }
 
     /*!
      * \brief Save written bytes as completed and ready to be read by a reader.
      *
      * \param[in] written_size Number of written bytes to save.
      */
-    void commit(shm_stream_size_t written_size) noexcept;
+    void commit(shm_stream_size_t written_size) noexcept {
+        c_shm_stream_light_stream_writer_commit(writer_.get(), written_size);
+    }
 
 private:
-    //! Type of the internal data.
-    struct impl_type;
-
-    //! Internal data.
-    impl_type* impl_;
+    //! Actual writer in C interface.
+    details::smart_ptr<c_shm_stream_light_stream_writer_t> writer_{};
 };
 
 /*!
