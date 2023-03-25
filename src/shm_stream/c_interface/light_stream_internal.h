@@ -26,6 +26,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 
+#include "atomic_stream_internal.h"
 #include "shm_stream/bytes_view.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
@@ -36,38 +37,9 @@ namespace shm_stream {
 namespace details {
 
 /*!
- * \brief Header of the data shared in light streams.
- */
-struct light_stream_header {
-    //! Atomic variables of indices.
-    alignas(cache_line_size()) details::atomic_index_pair<> indices{};
-
-    //! Size of the buffer.
-    alignas(cache_line_size()) shm_stream_size_t buffer_size{};
-};
-
-static_assert(sizeof(light_stream_header) == 3U * cache_line_size(),
-    "Unexpected size of light_stream_header.");
-
-/*!
  * \brief Data of light streams.
  */
-struct light_stream_data {
-    //! Shared memory object.
-    boost::interprocess::shared_memory_object shared_memory{};
-
-    //! Mapped region.
-    boost::interprocess::mapped_region mapped_region{};
-
-    /*!
-     * \brief Atomic variables of the indices of the next bytes for the writer
-     * and the reader.
-     */
-    atomic_index_pair<>* atomic_indices{nullptr};
-
-    //! Buffer of data.
-    mutable_bytes_view buffer{nullptr, 0U};
-};
+using light_stream_data = atomic_stream_data;
 
 /*!
  * \brief Get the name of the shared memory of a light stream.

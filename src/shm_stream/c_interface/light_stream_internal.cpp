@@ -25,6 +25,7 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <fmt/format.h>
 
+#include "atomic_stream_internal.h"
 #include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/shm_stream_exception.h"
 
@@ -52,24 +53,7 @@ light_stream_data create_and_initialize_light_stream_data(
         throw shm_stream_error(c_shm_stream_error_code_failed_to_open);
     }
 
-    const boost::interprocess::offset_t data_size =
-        static_cast<boost::interprocess::offset_t>(
-            sizeof(light_stream_header)) +
-        static_cast<boost::interprocess::offset_t>(buffer_size);
-    data.shared_memory.truncate(data_size);
-
-    data.mapped_region = boost::interprocess::mapped_region(
-        data.shared_memory, boost::interprocess::read_write);
-
-    auto* header = new (data.mapped_region.get_address()) light_stream_header();
-    header->indices.writer() = 0U;
-    header->indices.reader() = 0U;
-    header->buffer_size = buffer_size;
-
-    data.atomic_indices = &header->indices;
-    data.buffer =
-        mutable_bytes_view(static_cast<char*>(static_cast<void*>(header + 1)),
-            header->buffer_size);
+    init_stream_data_from_shared_memory(data, buffer_size);
 
     return data;
 }
@@ -93,32 +77,15 @@ light_stream_data prepare_light_stream_data(
         return create_and_initialize_light_stream_data(name, buffer_size);
     }
 
-    data.mapped_region = boost::interprocess::mapped_region(
-        data.shared_memory, boost::interprocess::read_write);
-
-    auto* header =
-        static_cast<light_stream_header*>(data.mapped_region.get_address());
-    data.atomic_indices = &header->indices;
-    data.buffer =
-        mutable_bytes_view(static_cast<char*>(static_cast<void*>(header + 1)),
-            header->buffer_size);
+    extract_stream_data_from_shared_memory(data);
 
     return data;
 }
 
 void remove_light_stream(string_view name) {
     const std::string mutex_name = details::light_stream_mutex_name(name);
-    {
-        boost::interprocess::named_mutex mutex{
-            boost::interprocess::open_or_create, mutex_name.c_str()};
-        {
-            std::unique_lock<boost::interprocess::named_mutex> lock(mutex);
-
-            boost::interprocess::shared_memory_object::remove(
-                details::light_stream_shm_name(name).c_str());
-        }
-    }
-    boost::interprocess::named_mutex::remove(mutex_name.c_str());
+    const std::string shm_name = light_stream_shm_name(name);
+    remove_atomic_stream(mutex_name, shm_name);
 }
 
 }  // namespace details
