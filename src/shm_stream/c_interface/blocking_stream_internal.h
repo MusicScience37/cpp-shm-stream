@@ -15,8 +15,8 @@
  */
 /*!
  * \file
- * \brief Definition of internal functions of light streams of bytes without
- * waiting (possibly lock-free and wait-free).
+ * \brief Definition of internal functions of blocking streams of bytes with
+ * wait operations.
  */
 #pragma once
 
@@ -36,9 +36,9 @@ namespace shm_stream {
 namespace details {
 
 /*!
- * \brief Header of the data shared in light streams.
+ * \brief Header of the data shared in blocking streams.
  */
-struct light_stream_header {
+struct blocking_stream_header {
     //! Atomic variables of indices.
     alignas(cache_line_size()) details::atomic_index_pair<> indices{};
 
@@ -46,13 +46,13 @@ struct light_stream_header {
     alignas(cache_line_size()) shm_stream_size_t buffer_size{};
 };
 
-static_assert(sizeof(light_stream_header) == 3U * cache_line_size(),
-    "Unexpected size of light_stream_header.");
+static_assert(sizeof(blocking_stream_header) == 3U * cache_line_size(),
+    "Unexpected size of blocking_stream_header.");
 
 /*!
- * \brief Data of light streams.
+ * \brief Data of blocking streams.
  */
-struct light_stream_data {
+struct blocking_stream_data {
     //! Shared memory object.
     boost::interprocess::shared_memory_object shared_memory{};
 
@@ -70,47 +70,47 @@ struct light_stream_data {
 };
 
 /*!
- * \brief Get the name of the shared memory of a light stream.
+ * \brief Get the name of the shared memory of a blocking stream.
  *
  * \param[in] stream_name Name of the stream.
  * \return Name of the shared memory.
  */
-[[nodiscard]] std::string light_stream_shm_name(string_view stream_name);
+[[nodiscard]] std::string blocking_stream_shm_name(string_view stream_name);
 
 /*!
- * \brief Get the name of the mutex of a light stream.
+ * \brief Get the name of the mutex of a blocking stream.
  *
  * \param[in] stream_name Name of the stream.
  * \return Name of the mutex.
  */
-[[nodiscard]] std::string light_stream_mutex_name(string_view stream_name);
+[[nodiscard]] std::string blocking_stream_mutex_name(string_view stream_name);
 
 /*!
- * \brief Create and initialize data of a light stream.
+ * \brief Create and initialize data of a blocking stream.
  *
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
  * \return Data.
  */
-[[nodiscard]] light_stream_data create_and_initialize_light_stream_data(
+[[nodiscard]] blocking_stream_data create_and_initialize_blocking_stream_data(
     string_view name, shm_stream_size_t buffer_size);
 
 /*!
- * \brief Prepare data of a light stream.
+ * \brief Prepare data of a blocking stream.
  *
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
  * \return Data.
  */
-[[nodiscard]] light_stream_data prepare_light_stream_data(
+[[nodiscard]] blocking_stream_data prepare_blocking_stream_data(
     string_view name, shm_stream_size_t buffer_size);
 
 /*!
- * \brief Remove a light stream.
+ * \brief Remove a blocking stream.
  *
  * \param[in] name Name of the stream.
  */
-void remove_light_stream(string_view name);
+void remove_blocking_stream(string_view name);
 
 }  // namespace details
 }  // namespace shm_stream
