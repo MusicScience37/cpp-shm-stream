@@ -21,3 +21,4 @@ function(target_add_to_benchmark TARGET)
 endfunction()
 
 add_subdirectory(send_messages)
+add_subdirectory(ping_pong)

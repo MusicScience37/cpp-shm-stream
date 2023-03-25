@@ -51,6 +51,7 @@ class LibraryConan(ConanFile):
         if self.options.requirements_for_tests:
             self.build_requires("catch2/3.3.1")
             self.build_requires("cpp_stat_bench/0.10.0@MusicScience37/stable")
+            self.build_requires("rpclib/2.3.0")
 
     def package(self):
         self.copy("*.h")

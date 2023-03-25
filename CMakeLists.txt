@@ -59,6 +59,7 @@ if(${UPPER_PROJECT_NAME}_TESTING)
     find_package(Catch2 REQUIRED)
     find_package(cpp_stat_bench REQUIRED)
     find_package(Threads REQUIRED)
+    find_package(rpclib REQUIRED)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS
