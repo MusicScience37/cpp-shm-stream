@@ -135,9 +135,9 @@ public:
     ~light_bytes_queue_writer() noexcept = default;
 
     /*!
-     * \brief Get the size of the available bytes to write.
+     * \brief Get the number of the available bytes to write.
      *
-     * \return Size of the available bytes to write.
+     * \return Number of the available bytes to write.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_read_index =
@@ -241,7 +241,7 @@ private:
  *
  * \tparam AtomicType Type of atomic variables.
  *
- * \thread_safety All operation is safe if only one writer exists.
+ * \thread_safety All operation is safe if only one reader exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
 class light_bytes_queue_reader {
@@ -332,9 +332,9 @@ public:
     ~light_bytes_queue_reader() noexcept = default;
 
     /*!
-     * \brief Get the size of the available bytes to read.
+     * \brief Get the number of the available bytes to read.
      *
-     * \return Size of the available bytes to read.
+     * \return Number of the available bytes to read.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_write_index =

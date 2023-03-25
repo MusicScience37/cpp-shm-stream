@@ -15,9 +15,9 @@
  */
 /*!
  * \file
- * \brief Benchmark of streams of bytes without waiting.
+ * \brief Benchmark of blocking streams of bytes with wait operations.
  */
-#include "shm_stream/light_stream.h"
+#include "shm_stream/blocking_stream.h"
 
 #include <atomic>
 #include <thread>
@@ -27,31 +27,30 @@
 #include "send_messages_fixture.h"
 #include "shm_stream/bytes_view.h"
 
-STAT_BENCH_CASE_F(
-    shm_stream_test::send_messages_fixture, "send_messages", "light_stream") {
-    using shm_stream::light_stream_reader;
-    using shm_stream::light_stream_writer;
+STAT_BENCH_CASE_F(shm_stream_test::send_messages_fixture, "send_messages",
+    "blocking_stream") {
+    using shm_stream::blocking_stream_reader;
+    using shm_stream::blocking_stream_writer;
     using shm_stream::shm_stream_size_t;
 
     const std::string& data = this->get_data();
     const std::size_t data_size = data.size();
     const std::size_t buffer_size = 10 * data_size;
 
-    const std::string stream_name = "light_stream_test";
-    shm_stream::light_stream::remove(stream_name);
+    const std::string stream_name = "blocking_stream_test";
+    shm_stream::blocking_stream::remove(stream_name);
 
-    light_stream_writer writer;
+    blocking_stream_writer writer;
     writer.open(stream_name, buffer_size);
 
-    light_stream_reader reader;
+    blocking_stream_reader reader;
     reader.open(stream_name, buffer_size);
 
-    std::atomic<bool> is_running{true};
-    std::thread reader_thread{[&reader, &is_running] {
+    std::thread reader_thread{[&reader] {
         while (true) {
-            const auto buffer = reader.try_reserve();
+            const auto buffer = reader.wait_reserve();
             if (buffer.empty()) {
-                if (!is_running.load(std::memory_order_relaxed)) {
+                if (reader.is_stopped()) {
                     return;
                 }
                 std::this_thread::yield();
@@ -64,10 +63,7 @@ STAT_BENCH_CASE_F(
     STAT_BENCH_MEASURE() {
         for (auto data_iter = data.cbegin(), data_end = data.cend();
              data_iter != data_end;) {
-            const auto buffer = writer.try_reserve();
-            if (buffer.empty()) {
-                continue;
-            }
+            const auto buffer = writer.wait_reserve();
             const std::ptrdiff_t writable_size =
                 std::min<std::ptrdiff_t>(buffer.size(), data_end - data_iter);
             std::copy(data_iter, data_iter + writable_size, buffer.data());
@@ -80,6 +76,6 @@ STAT_BENCH_CASE_F(
         }
     };
 
-    is_running.store(false, std::memory_order_relaxed);
+    reader.stop();
     reader_thread.join();
 }

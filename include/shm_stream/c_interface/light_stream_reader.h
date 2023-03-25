@@ -65,10 +65,10 @@ SHM_STREAM_EXPORT void c_shm_stream_light_stream_reader_destroy(
     c_shm_stream_light_stream_reader_t* reader);
 
 /*!
- * \brief Get the size of the available bytes to read.
+ * \brief Get the number of the available bytes to read.
  *
  * \param[in] reader Reader.
- * \return Size of the available bytes to read.
+ * \return Number of the available bytes to read.
  */
 SHM_STREAM_EXPORT c_shm_stream_size_t
 c_shm_stream_light_stream_reader_available_size(

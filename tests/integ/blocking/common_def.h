@@ -15,27 +15,12 @@
  */
 /*!
  * \file
- * \brief Definition of throw_if_error function.
+ * \brief Common definitions between writers and readers.
  */
 #pragma once
 
-#include "shm_stream/c_interface/error_codes.h"
-#include "shm_stream/shm_stream_exception.h"
+#include "shm_stream/common_types.h"
 
-namespace shm_stream {
-namespace details {
+static constexpr const char* stream_name = "shm_stream_test_integ_blocking";
 
-/*!
- * \brief Check an error code and throw an exception if an error.
- *
- * \param[in] code Error code.
- */
-inline void throw_if_error(c_shm_stream_error_code_t code) {
-    if (code == c_shm_stream_error_code_success) {
-        return;
-    }
-    throw shm_stream_error(code);
-}
-
-}  // namespace details
-}  // namespace shm_stream
+static constexpr shm_stream::shm_stream_size_t buffer_size = 10;
