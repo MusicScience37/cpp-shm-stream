@@ -24,6 +24,7 @@
 #include <type_traits>
 
 #include <boost/atomic/ipc_atomic.hpp>
+#include <boost/memory_order.hpp>
 
 #include "shm_stream/bytes_view.h"
 #include "shm_stream/c_interface/error_codes.h"
@@ -35,11 +36,22 @@ namespace shm_stream {
 namespace details {
 
 /*!
+ * \brief Get the index used in atomic variables to notify stop of queues.
+ *
+ * \return Index.
+ */
+inline constexpr shm_stream_size_t blocking_bytes_queue_stop_index() noexcept {
+    return std::numeric_limits<shm_stream_size_t>::max() - 1U;
+}
+
+/*!
  * \brief Class of writer of queues of bytes with blocking operations.
  *
  * \tparam AtomicType Type of atomic variables.
  *
- * \thread_safety All operation is safe if only one writer exists.
+ * \thread_safety All operation is safe if only one writer exists,
+ * except for stop and is_stopped functions which are safe to call from any
+ * threads.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
 class blocking_bytes_queue_writer {
@@ -99,9 +111,13 @@ public:
           next_write_index_(0U),
           reserved_(0U) {
         SHM_STREAM_ASSERT(atomic_next_read_index_ != nullptr);
-        SHM_STREAM_ASSERT(atomic_next_read_index_->load() < max_size());
+        SHM_STREAM_ASSERT(atomic_next_read_index_->load() < max_size() ||
+            atomic_next_read_index_->load() ==
+                blocking_bytes_queue_stop_index());
         SHM_STREAM_ASSERT(atomic_next_write_index_ != nullptr);
-        SHM_STREAM_ASSERT(atomic_next_write_index_->load() < max_size());
+        SHM_STREAM_ASSERT(atomic_next_write_index_->load() < max_size() ||
+            atomic_next_write_index_->load() ==
+                blocking_bytes_queue_stop_index());
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
@@ -110,6 +126,9 @@ public:
 
         next_write_index_ =
             atomic_next_write_index_->load(boost::memory_order::relaxed);
+        if (next_write_index_ == blocking_bytes_queue_stop_index()) {
+            next_write_index_ = 0U;
+        }
     }
 
     // Prevent copy.
@@ -135,6 +154,8 @@ public:
      * \brief Get the number of available bytes to write.
      *
      * \return Number of the available bytes to write.
+     *
+     * \note After stop of this queue, this function returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         const shm_stream_size_t next_read_index =
@@ -146,6 +167,8 @@ public:
      * \brief Wait until some bytes are available.
      *
      * \return Number of the available bytes to write.
+     *
+     * \note After stop of this queue, this function immediately returns zero.
      */
     shm_stream_size_t wait() const noexcept {
         shm_stream_size_t unexpected_next_read_index = next_write_index_ + 1U;
@@ -164,6 +187,31 @@ public:
     }
 
     /*!
+     * \brief Stop this queue.
+     */
+    void stop() noexcept {
+        atomic_next_read_index_->store(
+            blocking_bytes_queue_stop_index(), boost::memory_order::relaxed);
+        atomic_next_read_index_->notify_all();
+        atomic_next_write_index_->store(
+            blocking_bytes_queue_stop_index(), boost::memory_order::relaxed);
+        atomic_next_write_index_->notify_all();
+    }
+
+    /*!
+     * \brief Check whether this queue is stopped.
+     *
+     * \retval true This queue is stopped.
+     * \retval false This queue is not stopped.
+     */
+    [[nodiscard]] bool is_stopped() noexcept {
+        return (atomic_next_read_index_->load(boost::memory_order::relaxed) ==
+                   blocking_bytes_queue_stop_index()) ||
+            (atomic_next_write_index_->load(boost::memory_order::relaxed) ==
+                blocking_bytes_queue_stop_index());
+    }
+
+    /*!
      * \brief Try to reserve some bytes to write.
      *
      * \param[in] expected_size Expected number of bytes to reserve to write.
@@ -175,6 +223,7 @@ public:
      * return value of available_size function, because this queue is a circular
      * buffer and this function reserves continuous byte sequences from the
      * circular buffer.
+     * \note After stop of this queue, this function returns empty buffers.
      */
     [[nodiscard]] mutable_bytes_view try_reserve(
         shm_stream_size_t expected_size = max_size()) noexcept {
@@ -205,8 +254,12 @@ public:
         }
         SHM_STREAM_ASSERT(next_write_index_ < size_);
 
-        atomic_next_write_index_->store(
-            next_write_index_, boost::memory_order::release);
+        const shm_stream_size_t old_next_write_index =
+            atomic_next_write_index_->exchange(
+                next_write_index_, boost::memory_order::release);
+        if (old_next_write_index == blocking_bytes_queue_stop_index()) {
+            stop();
+        }
         atomic_next_write_index_->notify_all();
 
         reserved_ = 0U;
@@ -221,6 +274,9 @@ private:
      */
     [[nodiscard]] shm_stream_size_t calc_reservable_size(
         shm_stream_size_t next_read_index) const noexcept {
+        if (next_read_index == blocking_bytes_queue_stop_index()) {
+            return 0U;
+        }
         if (next_write_index_ < next_read_index) {
             return next_read_index - next_write_index_ - 1U;
         }
@@ -238,6 +294,9 @@ private:
      */
     [[nodiscard]] shm_stream_size_t calc_available_size(
         shm_stream_size_t next_read_index) const noexcept {
+        if (next_read_index == blocking_bytes_queue_stop_index()) {
+            return 0U;
+        }
         if (next_read_index <= next_write_index_) {
             next_read_index += size_;
             SHM_STREAM_ASSERT(next_read_index > next_write_index_);
@@ -269,7 +328,9 @@ private:
  *
  * \tparam AtomicType Type of atomic variables.
  *
- * \thread_safety All operation is safe if only one writer exists.
+ * \thread_safety All operation is safe if only one reader exists,
+ * except for stop and is_stopped functions which are safe to call from any
+ * threads.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
 class blocking_bytes_queue_reader {
@@ -328,9 +389,13 @@ public:
           next_read_index_(0U),
           reserved_(0U) {
         SHM_STREAM_ASSERT(atomic_next_read_index_ != nullptr);
-        SHM_STREAM_ASSERT(atomic_next_read_index_->load() < max_size());
+        SHM_STREAM_ASSERT(atomic_next_read_index_->load() < max_size() ||
+            atomic_next_read_index_->load() ==
+                blocking_bytes_queue_stop_index());
         SHM_STREAM_ASSERT(atomic_next_write_index_ != nullptr);
-        SHM_STREAM_ASSERT(atomic_next_write_index_->load() < max_size());
+        SHM_STREAM_ASSERT(atomic_next_write_index_->load() < max_size() ||
+            atomic_next_write_index_->load() ==
+                blocking_bytes_queue_stop_index());
         SHM_STREAM_ASSERT(buffer_ != nullptr);
 
         if (size_ < min_size() || size_ > max_size()) {
@@ -339,6 +404,9 @@ public:
 
         next_read_index_ =
             atomic_next_read_index_->load(boost::memory_order::relaxed);
+        if (next_read_index_ == blocking_bytes_queue_stop_index()) {
+            next_read_index_ = 0U;
+        }
     }
 
     // Prevent copy.
@@ -364,6 +432,8 @@ public:
      * \brief Get the number of the available bytes to read.
      *
      * \return Number of the available bytes to read.
+     *
+     * \note After stop of this queue, this function returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_write_index =
@@ -375,6 +445,8 @@ public:
      * \brief Wait until some bytes are available.
      *
      * \return Number of the available bytes to read.
+     *
+     * \note After stop of this queue, this function immediately returns zero.
      */
     shm_stream_size_t wait() const noexcept {
         const shm_stream_size_t unexpected_next_write_index = next_read_index_;
@@ -390,6 +462,31 @@ public:
     }
 
     /*!
+     * \brief Stop this queue.
+     */
+    void stop() noexcept {
+        atomic_next_read_index_->store(
+            blocking_bytes_queue_stop_index(), boost::memory_order::relaxed);
+        atomic_next_read_index_->notify_all();
+        atomic_next_write_index_->store(
+            blocking_bytes_queue_stop_index(), boost::memory_order::relaxed);
+        atomic_next_write_index_->notify_all();
+    }
+
+    /*!
+     * \brief Check whether this queue is stopped.
+     *
+     * \retval true This queue is stopped.
+     * \retval false This queue is not stopped.
+     */
+    [[nodiscard]] bool is_stopped() noexcept {
+        return (atomic_next_read_index_->load(boost::memory_order::relaxed) ==
+                   blocking_bytes_queue_stop_index()) ||
+            (atomic_next_write_index_->load(boost::memory_order::relaxed) ==
+                blocking_bytes_queue_stop_index());
+    }
+
+    /*!
      * \brief Try to reserve some bytes to read.
      *
      * \param[in] expected_size Expected number of bytes to reserve to read.
@@ -401,6 +498,7 @@ public:
      * return value of available_size function, because this queue is a circular
      * buffer and this function reserves continuous byte sequences from the
      * circular buffer.
+     * \note After stop of this queue, this function returns empty buffers.
      */
     [[nodiscard]] bytes_view try_reserve(
         shm_stream_size_t expected_size = max_size()) noexcept {
@@ -431,8 +529,12 @@ public:
         }
         SHM_STREAM_ASSERT(next_read_index_ < size_);
 
-        atomic_next_read_index_->store(
-            next_read_index_, boost::memory_order::release);
+        const shm_stream_size_t old_next_read_index =
+            atomic_next_read_index_->exchange(
+                next_read_index_, boost::memory_order::release);
+        if (old_next_read_index == blocking_bytes_queue_stop_index()) {
+            stop();
+        }
         atomic_next_read_index_->notify_all();
 
         reserved_ = 0U;
@@ -447,6 +549,9 @@ private:
      */
     [[nodiscard]] shm_stream_size_t calc_reservable_size(
         shm_stream_size_t next_write_index) const noexcept {
+        if (next_write_index == blocking_bytes_queue_stop_index()) {
+            return 0U;
+        }
         if (next_read_index_ <= next_write_index) {
             return next_write_index - next_read_index_;
         }
@@ -461,6 +566,9 @@ private:
      */
     [[nodiscard]] shm_stream_size_t calc_available_size(
         shm_stream_size_t next_write_index) const noexcept {
+        if (next_write_index == blocking_bytes_queue_stop_index()) {
+            return 0U;
+        }
         if (next_write_index < next_read_index_) {
             next_write_index += size_;
         }

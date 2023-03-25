@@ -34,6 +34,7 @@
 TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
     using shm_stream::mutable_bytes_view;
     using shm_stream::shm_stream_size_t;
+    using shm_stream::details::blocking_bytes_queue_stop_index;
     using shm_stream::details::blocking_bytes_queue_writer;
 
     using atomic_type = boost::atomics::ipc_atomic<shm_stream_size_t>;
@@ -95,6 +96,17 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
                 indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
 
             CHECK(writer.available_size() == 0U);  // NOLINT
+        }
+
+        SECTION("when stopped") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            CHECK(writer.available_size() == 0U);
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
         }
     }
 
@@ -186,6 +198,19 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
             CHECK(buffer.data() - raw_buffer.data() == 1U);
             CHECK(buffer.size() == 0U);  // NOLINT
         }
+
+        SECTION("when stopped") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            const auto buffer = writer.try_reserve();
+
+            CHECK(buffer.size() == 0U);  // NOLINT
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
+        }
     }
 
     SECTION("commit bytes") {
@@ -234,6 +259,36 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
             CHECK(indices.reader() == 2U);
             CHECK(indices.writer() == 0U);
         }
+
+        SECTION("when stopped after call to try_reserve") {
+            indices.reader() = 1U;
+            indices.writer() = 1U;
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+            const auto buffer = writer.try_reserve(3U);
+            CHECK(buffer.size() == 3U);
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+
+            writer.commit(2U);
+
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
+        }
+    }
+
+    SECTION("stop queue") {
+        atomic_index_pair_type indices;
+        constexpr shm_stream_size_t buffer_size = 7U;
+        std::array<char, buffer_size> raw_buffer{};
+        writer_type writer{
+            indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+        writer.stop();
+
+        CHECK(writer.is_stopped());
+        CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+        CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
     }
 
     SECTION("wait for bytes writable") {
@@ -301,6 +356,25 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
             CHECK(future.get() == 6U);
         }
 
+        SECTION("when stopped already") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<shm_stream_size_t> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            CHECK(future.get() == 0U);
+        }
+
         SECTION("when available after some time") {
             indices.reader() = 2U;
             indices.writer() = 1U;
@@ -324,6 +398,29 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
 
             CHECK(future.get() == 1U);
         }
+
+        SECTION("when stopped after some time") {
+            indices.reader() = 2U;
+            indices.writer() = 1U;
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<shm_stream_size_t> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            writer.stop();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            CHECK(future.get() == 0U);
+        }
     }
 }
 
@@ -331,6 +428,7 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
     using shm_stream::bytes_view;
     using shm_stream::shm_stream_size_t;
     using shm_stream::details::blocking_bytes_queue_reader;
+    using shm_stream::details::blocking_bytes_queue_stop_index;
 
     using atomic_type = boost::atomics::ipc_atomic<shm_stream_size_t>;
     using atomic_index_pair_type =
@@ -400,6 +498,17 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
 
             CHECK(available_size == 6U);
         }
+
+        SECTION("when stopped") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            CHECK(reader.available_size() == 0U);
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
+        }
     }
 
     SECTION("reserve bytes") {
@@ -466,6 +575,19 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
             CHECK(buffer.data() - raw_buffer.data() == 5U);  // NOLINT
             CHECK(buffer.size() == 2U);                      // NOLINT
         }
+
+        SECTION("when stopped") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            const auto buffer = reader.try_reserve();
+
+            CHECK(buffer.size() == 0U);  // NOLINT
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
+        }
     }
 
     SECTION("commit bytes") {
@@ -528,6 +650,35 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
             CHECK(indices.reader() == 0U);
             CHECK(indices.writer() == 2U);  // NOLINT
         }
+
+        SECTION("when stopped after call to try_reserve") {
+            indices.reader() = 2U;
+            indices.writer() = 5U;  // NOLINT
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+            const auto buffer = reader.try_reserve();
+            CHECK(buffer.size() == 3U);  // NOLINT
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+
+            reader.commit(2U);
+
+            CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+            CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
+        }
+    }
+
+    SECTION("stop queue") {
+        atomic_index_pair_type indices;
+        constexpr shm_stream_size_t buffer_size = 7U;
+        std::array<char, buffer_size> raw_buffer{};
+        reader_type reader{indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+        reader.stop();
+
+        CHECK(reader.is_stopped());
+        CHECK(indices.reader().load() == blocking_bytes_queue_stop_index());
+        CHECK(indices.writer().load() == blocking_bytes_queue_stop_index());
     }
 
     SECTION("wait for bytes readable") {
@@ -595,6 +746,25 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
             CHECK(future.get() == 6U);
         }
 
+        SECTION("when stopped already") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<shm_stream_size_t> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            CHECK(future.get() == 0U);
+        }
+
         SECTION("when available after some time") {
             indices.reader() = 3U;
             indices.writer() = 3U;
@@ -617,6 +787,29 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
             thread.join();
 
             CHECK(future.get() == 1U);
+        }
+
+        SECTION("when stopped after some time") {
+            indices.reader() = 3U;
+            indices.writer() = 3U;
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<shm_stream_size_t> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            reader.stop();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            CHECK(future.get() == 0U);
         }
     }
 }

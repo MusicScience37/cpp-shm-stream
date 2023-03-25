@@ -241,7 +241,7 @@ private:
  *
  * \tparam AtomicType Type of atomic variables.
  *
- * \thread_safety All operation is safe if only one writer exists.
+ * \thread_safety All operation is safe if only one reader exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
 class light_bytes_queue_reader {
