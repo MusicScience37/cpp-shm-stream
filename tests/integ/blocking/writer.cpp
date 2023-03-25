@@ -15,7 +15,7 @@
  */
 /*!
  * \file
- * \brief Implementation of writer of streams of bytes without waiting.
+ * \brief Implementation of writer of streams of bytes with wait operations.
  */
 #include <algorithm>
 #include <cstddef>
@@ -41,7 +41,6 @@ int main() {
             line.clear();
             std::getline(std::cin, line);
             if (line.empty()) {
-                writer.stop();
                 return 0;
             }
             line += '\n';

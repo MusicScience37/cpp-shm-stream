@@ -15,8 +15,11 @@
  */
 /*!
  * \file
- * \brief Implementation of reader of streams of bytes without waiting.
+ * \brief Implementation of reader of streams of bytes with wait operations.
  */
+#include <atomic>
+#include <chrono>
+#include <csignal>
 #include <cstdio>
 #include <exception>
 #include <thread>
@@ -26,21 +29,44 @@
 #include "common_def.h"
 #include "shm_stream/blocking_stream.h"
 
+extern "C" void on_signal(int /*number*/);
+
+std::atomic<bool> is_stopped{false};
+
+void on_signal(int /*number*/) {
+    is_stopped.store(true, std::memory_order_relaxed);
+}
+
 int main() {
     try {
+        std::signal(SIGINT, on_signal);
+        std::signal(SIGTERM, on_signal);
+
         shm_stream::blocking_stream::remove(stream_name);
 
         shm_stream::blocking_stream_reader reader;
         reader.open(stream_name, buffer_size);
 
-        while (true) {
-            const auto buffer = reader.try_reserve();
-            if (buffer.empty() && reader.is_stopped()) {
-                return 0;
+        std::thread thread{[&reader] {
+            while (true) {
+                const auto buffer = reader.try_reserve();
+                if (buffer.empty() && reader.is_stopped()) {
+                    std::fflush(stdout);
+                    return;
+                }
+                std::fwrite(buffer.data(), 1, buffer.size(), stdout);
+                reader.commit(buffer.size());
             }
-            std::fwrite(buffer.data(), 1, buffer.size(), stdout);
-            reader.commit(buffer.size());
+        }};
+
+        while (!is_stopped.load(std::memory_order_relaxed)) {
+            // NOLINTNEXTLINE
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+        // NOLINTNEXTLINE
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        reader.stop();
+        thread.join();
     } catch (const std::exception& e) {
         fmt::print(stderr, "Exception thrown: {}", e.what());
         return 1;
