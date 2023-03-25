@@ -237,6 +237,9 @@ TEST_CASE(
             while (true) {
                 writer.wait();
                 const auto buffer = writer.try_reserve();
+                if (buffer.empty()) {
+                    std::terminate();
+                }
 
                 const std::ptrdiff_t writable_size = std::min<std::ptrdiff_t>(
                     buffer.size(), data_end - data_iter);
@@ -264,6 +267,9 @@ TEST_CASE(
             while (true) {
                 reader.wait();
                 const auto buffer = reader.try_reserve();
+                if (buffer.empty()) {
+                    std::terminate();
+                }
 
                 const std::ptrdiff_t readable_size = std::min<std::ptrdiff_t>(
                     buffer.size(), data_end - data_iter);
