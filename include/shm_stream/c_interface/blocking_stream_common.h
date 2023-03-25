@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /*!
- * \brief Create a blocking stream of bytes without waiting.
+ * \brief Create a blocking stream of bytes with wait operation.
  *
  * \param[in] name Name of the stream.
  * \param[in] buffer_size Size of the buffer.
@@ -40,7 +40,7 @@ SHM_STREAM_EXPORT c_shm_stream_error_code_t c_shm_stream_blocking_stream_create(
     c_shm_stream_string_view_t name, c_shm_stream_size_t buffer_size);
 
 /*!
- * \brief Remove a blocking stream of bytes without waiting.
+ * \brief Remove a blocking stream of bytes with wait operation.
  *
  * \param[in] name Name of the stream.
  */

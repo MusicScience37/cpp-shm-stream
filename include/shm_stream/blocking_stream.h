@@ -105,7 +105,7 @@ public:
      *
      * \return Number of the available bytes to write.
      *
-     * \note After stop of this stream, this function immediately returns zero.
+     * \note After stop of this stream, this function returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         return c_shm_stream_blocking_stream_writer_available_size(
@@ -235,8 +235,7 @@ private:
 };
 
 /*!
- * \brief Class of reader of blocking streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Class of reader of blocking streams of bytes with wait operations.
  *
  * \thread_safety All operation is safe if only one reader exists,
  * except for stop and is_stopped functions which are safe to call from any
@@ -312,7 +311,7 @@ public:
      *
      * \return Number of the available bytes to read.
      *
-     * \note After stop of this stream, this function immediately returns zero.
+     * \note After stop of this stream, this function returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         return c_shm_stream_blocking_stream_reader_available_size(
@@ -443,20 +442,18 @@ private:
 };
 
 /*!
- * \brief Classes and functions of blocking streams of bytes without waiting
- * (possibly lock-free and wait-free).
+ * \brief Classes and functions of blocking streams of bytes with wait
+ * operations.
  */
 namespace blocking_stream {
 
 /*!
- * \brief Class of writer of streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Class of writer of blocking streams of bytes with wait operations.
  */
 using writer = blocking_stream_writer;
 
 /*!
- * \brief Class of reader of streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Class of reader of blocking streams of bytes with wait operations.
  */
 using reader = blocking_stream_reader;
 

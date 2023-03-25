@@ -68,7 +68,7 @@ SHM_STREAM_EXPORT void c_shm_stream_blocking_stream_reader_destroy(
  * \param[in] reader Reader.
  * \return Number of the available bytes to read.
  *
- * \note After stop of this stream, this function immediately returns zero.
+ * \note After stop of this stream, this function returns zero.
  */
 SHM_STREAM_EXPORT c_shm_stream_size_t
 c_shm_stream_blocking_stream_reader_available_size(
