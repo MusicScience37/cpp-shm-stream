@@ -26,7 +26,12 @@ def bench(build_dir: pathlib.Path) -> None:
         )
     finally:
         server_process.terminate()
-        server_process.wait(timeout=5)
+        try:
+            server_process.wait(timeout=5)
+        except:
+            server_process.kill()
+            server_process.wait(timeout=5)
+            raise
 
     assert server_process.returncode == 0
     assert client_result.returncode == 0

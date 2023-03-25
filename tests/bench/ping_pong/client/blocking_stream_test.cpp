@@ -15,11 +15,9 @@
  */
 /*!
  * \file
- * \brief Benchmark of light streams.
+ * \brief Benchmark of blocking streams of bytes with wait operations.
  */
-#include "shm_stream/light_stream.h"
-
-#include <thread>
+#include "shm_stream/blocking_stream.h"
 
 #include <stat_bench/benchmark_macros.h>
 
@@ -27,35 +25,30 @@
 #include "command_client.h"
 #include "ping_pong_fixture.h"
 #include "shm_stream/bytes_view.h"
-#include "shm_stream/common_types.h"
 
 STAT_BENCH_CASE_F(
-    shm_stream_test::ping_pong_fixture, "ping_pong", "light_stream") {
-    using shm_stream::light_stream_reader;
-    using shm_stream::light_stream_writer;
+    shm_stream_test::ping_pong_fixture, "ping_pong", "blocking_stream") {
+    using shm_stream::blocking_stream_reader;
+    using shm_stream::blocking_stream_writer;
     using shm_stream::shm_stream_size_t;
 
     shm_stream_test::command_client().change_protocol(
-        shm_stream_test::protocol_type::light_stream);
+        shm_stream_test::protocol_type::blocking_stream);
 
     const std::string& data = this->get_data();
     const std::size_t data_size = data.size();
     const std::size_t buffer_size = shm_stream_test::buffer_size();
 
-    light_stream_writer writer;
+    blocking_stream_writer writer;
     writer.open(shm_stream_test::request_stream_name(), buffer_size);
 
-    light_stream_reader reader;
+    blocking_stream_reader reader;
     reader.open(shm_stream_test::response_stream_name(), buffer_size);
 
     STAT_BENCH_MEASURE() {
         for (auto data_iter = data.cbegin(), data_end = data.cend();
              data_iter != data_end;) {
-            const auto buffer = writer.try_reserve();
-            if (buffer.empty()) {
-                std::this_thread::yield();
-                continue;
-            }
+            const auto buffer = writer.wait_reserve();
             const std::ptrdiff_t writable_size =
                 std::min<std::ptrdiff_t>(buffer.size(), data_end - data_iter);
             std::copy(data_iter, data_iter + writable_size, buffer.data());
@@ -68,11 +61,7 @@ STAT_BENCH_CASE_F(
         }
 
         for (shm_stream_size_t i = 0; i < data_size;) {
-            const auto buffer = reader.try_reserve();
-            if (buffer.empty()) {
-                std::this_thread::yield();
-                continue;
-            }
+            const auto buffer = reader.wait_reserve();
             i += buffer.size();
             reader.commit(buffer.size());
         }

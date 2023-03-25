@@ -15,55 +15,54 @@
  */
 /*!
  * \file
- * \brief Implementation of light_stream_server class.
+ * \brief Implementation of blocking_stream_server class.
  */
-#include "light_stream_server.h"
+#include "blocking_stream_server.h"
 
 #include <atomic>
 
 #include "../common.h"
+#include "shm_stream/blocking_stream.h"
 #include "shm_stream/common_types.h"
 
 namespace shm_stream_test {
 
-light_stream_server::light_stream_server() {
+blocking_stream_server::blocking_stream_server() {
+    shm_stream::blocking_stream::remove(request_stream_name());
+    shm_stream::blocking_stream::remove(response_stream_name());
     input_.open(request_stream_name(), buffer_size());
     output_.open(response_stream_name(), buffer_size());
-}
 
-light_stream_server::~light_stream_server() { stop(); }
-
-void light_stream_server::start() {
-    is_stopped_.store(false, std::memory_order_relaxed);
     thread_ = std::thread{[this] { this->run(); }};
 }
 
-void light_stream_server::stop() {
-    is_stopped_.store(true, std::memory_order_relaxed);
+blocking_stream_server::~blocking_stream_server() {
+    output_.stop();
+    input_.stop();
     if (thread_.joinable()) {
         thread_.join();
     }
 }
 
-void light_stream_server::run() {
+void blocking_stream_server::start() {
+    // No operation.
+}
+
+void blocking_stream_server::stop() {
+    // No operation.
+}
+
+void blocking_stream_server::run() {
     while (true) {
-        const auto input_buffer = input_.try_reserve();
+        const auto input_buffer = input_.wait_reserve();
         if (input_buffer.empty()) {
-            if (is_stopped_.load(std::memory_order_relaxed)) {
-                return;
-            }
-            std::this_thread::yield();
-            continue;
+            return;
         }
 
         for (auto iter = input_buffer.data(),
                   end = input_buffer.data() + input_buffer.size();
              iter != end;) {
-            const auto output_buffer = output_.try_reserve();
-            if (output_buffer.empty()) {
-                std::this_thread::yield();
-                continue;
-            }
+            const auto output_buffer = output_.wait_reserve();
 
             const std::ptrdiff_t writable_size =
                 std::min<std::ptrdiff_t>(output_buffer.size(), end - iter);

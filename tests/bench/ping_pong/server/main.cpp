@@ -25,6 +25,7 @@
 
 #include <fmt/format.h>
 
+#include "blocking_stream_server.h"
 #include "command_server.h"
 #include "light_stream_server.h"
 #include "server_base.h"
@@ -48,6 +49,8 @@ int main() {
             bench_server{};
         bench_server.emplace(shm_stream_test::protocol_type::light_stream,
             std::make_shared<shm_stream_test::light_stream_server>());
+        bench_server.emplace(shm_stream_test::protocol_type::blocking_stream,
+            std::make_shared<shm_stream_test::blocking_stream_server>());
         bench_server.emplace(shm_stream_test::protocol_type::udp_v4,
             std::make_shared<shm_stream_test::udp_server>(
                 shm_stream_test::protocol_type::udp_v4));
