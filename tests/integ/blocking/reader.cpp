@@ -35,7 +35,7 @@ int main() {
 
         while (true) {
             const auto buffer = reader.try_reserve();
-            if (reader.is_stopped()) {
+            if (buffer.empty() && reader.is_stopped()) {
                 return 0;
             }
             std::fwrite(buffer.data(), 1, buffer.size(), stdout);
