@@ -113,6 +113,34 @@ public:
     }
 
     /*!
+     * \brief Wait until some bytes are available.
+     *
+     * \return Number of the available bytes to write.
+     *
+     * \note After stop of this stream, this function immediately returns zero.
+     */
+    shm_stream_size_t wait() const noexcept {
+        return c_shm_stream_blocking_stream_writer_wait(writer_.get());
+    }
+
+    /*!
+     * \brief Stop this stream.
+     */
+    void stop() noexcept {
+        c_shm_stream_blocking_stream_writer_stop(writer_.get());
+    }
+
+    /*!
+     * \brief Check whether this stream is stopped.
+     *
+     * \retval true This stream is stopped.
+     * \retval false This stream is not stopped.
+     */
+    [[nodiscard]] bool is_stopped() const noexcept {
+        return c_shm_stream_blocking_stream_writer_is_stopped(writer_.get());
+    }
+
+    /*!
      * \brief Try to reserve some bytes to write.
      *
      * \param[in] expected_size Expected number of bytes to reserve to write.
@@ -149,6 +177,46 @@ public:
     [[nodiscard]] mutable_bytes_view try_reserve() noexcept {
         const auto buf =
             c_shm_stream_blocking_stream_writer_try_reserve_all(writer_.get());
+        return mutable_bytes_view(buf.data, buf.size);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to write.
+     *
+     * \param[in] expected_size Expected number of bytes to reserve to write.
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] mutable_bytes_view wait_reserve(
+        shm_stream_size_t expected_size) noexcept {
+        const auto buf = c_shm_stream_blocking_stream_writer_wait_reserve(
+            writer_.get(), expected_size);
+        return mutable_bytes_view(buf.data, buf.size);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to read as many as possible.
+     *
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] mutable_bytes_view wait_reserve() noexcept {
+        const auto buf =
+            c_shm_stream_blocking_stream_writer_wait_reserve_all(writer_.get());
         return mutable_bytes_view(buf.data, buf.size);
     }
 
@@ -252,6 +320,34 @@ public:
     }
 
     /*!
+     * \brief Get the number of the available bytes to read.
+     *
+     * \return Number of the available bytes to read.
+     *
+     * \note After stop of this stream, this function immediately returns zero.
+     */
+    shm_stream_size_t wait() const noexcept {
+        return c_shm_stream_blocking_stream_reader_wait(reader_.get());
+    }
+
+    /*!
+     * \brief Stop this stream.
+     */
+    void stop() noexcept {
+        c_shm_stream_blocking_stream_reader_stop(reader_.get());
+    }
+
+    /*!
+     * \brief Check whether this stream is stopped.
+     *
+     * \retval true This stream is stopped.
+     * \retval false This stream is not stopped.
+     */
+    [[nodiscard]] bool is_stopped() const noexcept {
+        return c_shm_stream_blocking_stream_reader_is_stopped(reader_.get());
+    }
+
+    /*!
      * \brief Try to reserve some bytes to read.
      *
      * \param[in] expected_size Expected number of bytes to reserve to read.
@@ -288,6 +384,46 @@ public:
     [[nodiscard]] bytes_view try_reserve() noexcept {
         const auto buf =
             c_shm_stream_blocking_stream_reader_try_reserve_all(reader_.get());
+        return bytes_view(buf.data, buf.size);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to read.
+     *
+     * \param[in] expected_size Expected number of bytes to reserve to read.
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] bytes_view wait_reserve(
+        shm_stream_size_t expected_size) noexcept {
+        const auto buf = c_shm_stream_blocking_stream_reader_wait_reserve(
+            reader_.get(), expected_size);
+        return bytes_view(buf.data, buf.size);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to read as many as possible.
+     *
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this stream uses a
+     * circular buffer in the implementation and this function reserves
+     * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] bytes_view wait_reserve() noexcept {
+        const auto buf =
+            c_shm_stream_blocking_stream_reader_wait_reserve_all(reader_.get());
         return bytes_view(buf.data, buf.size);
     }
 

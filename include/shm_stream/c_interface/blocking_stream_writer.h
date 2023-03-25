@@ -156,7 +156,7 @@ c_shm_stream_blocking_stream_writer_try_reserve_all(
  * \note After stop of this stream, this function immediately returns empty
  * buffers.
  */
-SHM_STREAM_EXPORT c_shm_stream_bytes_view_t
+SHM_STREAM_EXPORT c_shm_stream_mutable_bytes_view_t
 c_shm_stream_blocking_stream_writer_wait_reserve(
     c_shm_stream_blocking_stream_writer_t* writer,
     c_shm_stream_size_t expected_size);
@@ -175,7 +175,7 @@ c_shm_stream_blocking_stream_writer_wait_reserve(
  * \note After stop of this stream, this function immediately returns empty
  * buffers.
  */
-SHM_STREAM_EXPORT c_shm_stream_bytes_view_t
+SHM_STREAM_EXPORT c_shm_stream_mutable_bytes_view_t
 c_shm_stream_blocking_stream_writer_wait_reserve_all(
     c_shm_stream_blocking_stream_writer_t* writer);
 

@@ -90,6 +90,30 @@ c_shm_stream_size_t c_shm_stream_blocking_stream_writer_available_size(
     return writer->writer.available_size();
 }
 
+c_shm_stream_size_t c_shm_stream_blocking_stream_writer_wait(
+    c_shm_stream_blocking_stream_writer_t* writer) {
+    if (writer == nullptr) {
+        return 0U;
+    }
+    return writer->writer.wait();
+}
+
+void c_shm_stream_blocking_stream_writer_stop(
+    c_shm_stream_blocking_stream_writer_t* writer) {
+    if (writer == nullptr) {
+        return;
+    }
+    writer->writer.stop();
+}
+
+bool c_shm_stream_blocking_stream_writer_is_stopped(
+    c_shm_stream_blocking_stream_writer_t* writer) {
+    if (writer == nullptr) {
+        return true;
+    }
+    return writer->writer.is_stopped();
+}
+
 c_shm_stream_mutable_bytes_view_t
 c_shm_stream_blocking_stream_writer_try_reserve(
     c_shm_stream_blocking_stream_writer_t* writer,
@@ -108,6 +132,27 @@ c_shm_stream_blocking_stream_writer_try_reserve_all(
         return c_shm_stream_mutable_bytes_view_t{nullptr, 0U};
     }
     const auto buf = writer->writer.try_reserve();
+    return c_shm_stream_mutable_bytes_view_t{buf.data(), buf.size()};
+}
+
+c_shm_stream_mutable_bytes_view_t
+c_shm_stream_blocking_stream_writer_wait_reserve(
+    c_shm_stream_blocking_stream_writer_t* writer,
+    c_shm_stream_size_t expected_size) {
+    if (writer == nullptr) {
+        return c_shm_stream_mutable_bytes_view_t{nullptr, 0U};
+    }
+    const auto buf = writer->writer.wait_reserve(expected_size);
+    return c_shm_stream_mutable_bytes_view_t{buf.data(), buf.size()};
+}
+
+c_shm_stream_mutable_bytes_view_t
+c_shm_stream_blocking_stream_writer_wait_reserve_all(
+    c_shm_stream_blocking_stream_writer_t* writer) {
+    if (writer == nullptr) {
+        return c_shm_stream_mutable_bytes_view_t{nullptr, 0U};
+    }
+    const auto buf = writer->writer.wait_reserve();
     return c_shm_stream_mutable_bytes_view_t{buf.data(), buf.size()};
 }
 
