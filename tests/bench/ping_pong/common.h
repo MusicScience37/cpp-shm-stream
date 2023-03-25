@@ -29,7 +29,16 @@ namespace shm_stream_test {
 //! Enumeration of protocol types.
 enum class protocol_type {
     //! Light streams.
-    light_stream
+    light_stream,
+
+    //! Blocking streams.
+    blocking_stream,
+
+    //! UDP in IPv4.
+    udp_v4,
+
+    //! UDP in IPv6.
+    udp_v6
 };
 
 /*!
@@ -68,6 +77,16 @@ inline std::string request_stream_name() {
  */
 inline std::string response_stream_name() {
     return "shm_stream_bench_ping_pong_response";
+}
+
+/*!
+ * \brief Get the port number for benchmark of UDP.
+ *
+ * \return Port number.
+ */
+inline std::uint16_t udp_port() {
+    // NOLINTNEXTLINE
+    return static_cast<std::uint16_t>(12345);
 }
 
 }  // namespace shm_stream_test

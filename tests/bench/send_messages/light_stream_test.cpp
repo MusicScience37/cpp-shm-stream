@@ -66,6 +66,7 @@ STAT_BENCH_CASE_F(
              data_iter != data_end;) {
             const auto buffer = writer.try_reserve();
             if (buffer.empty()) {
+                std::this_thread::yield();
                 continue;
             }
             const std::ptrdiff_t writable_size =

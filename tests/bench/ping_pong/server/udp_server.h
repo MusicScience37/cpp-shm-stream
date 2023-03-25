@@ -15,38 +15,42 @@
  */
 /*!
  * \file
- * \brief Definition of light_stream_server class.
+ * \brief Definition of udp_server class.
  */
 #pragma once
 
-#include <atomic>
-#include <string>
+#include <cstddef>
 #include <thread>
+#include <vector>
 
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/udp.hpp>
+
+#include "../common.h"
 #include "server_base.h"
-#include "shm_stream/light_stream.h"
 
 namespace shm_stream_test {
 
 /*!
- * \brief Class of server using light streams.
+ * \brief Class of UDP servers.
+ *
  */
-class light_stream_server : public server_base {
+class udp_server : public server_base {
 public:
     /*!
      * \brief Constructor.
      */
-    light_stream_server();
+    explicit udp_server(protocol_type protocol);
 
-    light_stream_server(const light_stream_server&) = delete;
-    light_stream_server(light_stream_server&&) = delete;
-    light_stream_server& operator=(const light_stream_server&) = delete;
-    light_stream_server& operator=(light_stream_server&&) = delete;
+    udp_server(const udp_server&) = delete;
+    udp_server(udp_server&&) = delete;
+    udp_server& operator=(const udp_server&) = delete;
+    udp_server& operator=(udp_server&&) = delete;
 
     /*!
      * \brief Destructor.
      */
-    ~light_stream_server() override;
+    ~udp_server() override;
 
     /*!
      * \brief Start processing.
@@ -64,17 +68,32 @@ private:
      */
     void run();
 
-    //! Input stream.
-    shm_stream::light_stream_reader input_{};
+    /*!
+     * \brief Receive next data asynchronously.
+     */
+    void async_receive_next();
 
-    //! Output stream.
-    shm_stream::light_stream_writer output_{};
+    /*!
+     * \brief Process received data.
+     *
+     * \param[in] bytes_transferred Number of bytes transferred.
+     */
+    void on_receive(std::size_t bytes_transferred);
 
-    //! Thread to process communication.
-    std::thread thread_{};
+    //! Context.
+    boost::asio::io_context context_{1};
 
-    //! Flag to stop processing.
-    std::atomic<bool> is_stopped_{false};
+    //! Socket.
+    boost::asio::ip::udp::socket socket_;
+
+    //! Sender endpoint.
+    boost::asio::ip::udp::endpoint sender_endpoint_;
+
+    //! Buffer of data.
+    std::vector<char> buffer_;
+
+    //! Thread.
+    std::thread thread_;
 };
 
 }  // namespace shm_stream_test

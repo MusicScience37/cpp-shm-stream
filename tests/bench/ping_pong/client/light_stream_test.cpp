@@ -20,6 +20,7 @@
 #include "shm_stream/light_stream.h"
 
 #include <atomic>
+#include <chrono>
 #include <thread>
 
 #include <stat_bench/benchmark_macros.h>

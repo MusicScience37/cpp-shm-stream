@@ -28,6 +28,7 @@
 #include "command_server.h"
 #include "light_stream_server.h"
 #include "server_base.h"
+#include "udp_server.h"
 
 extern "C" void on_signal(int /*number*/);
 
@@ -47,6 +48,12 @@ int main() {
             bench_server{};
         bench_server.emplace(shm_stream_test::protocol_type::light_stream,
             std::make_shared<shm_stream_test::light_stream_server>());
+        bench_server.emplace(shm_stream_test::protocol_type::udp_v4,
+            std::make_shared<shm_stream_test::udp_server>(
+                shm_stream_test::protocol_type::udp_v4));
+        bench_server.emplace(shm_stream_test::protocol_type::udp_v6,
+            std::make_shared<shm_stream_test::udp_server>(
+                shm_stream_test::protocol_type::udp_v6));
 
         shm_stream_test::command_server command_server{std::move(bench_server)};
 

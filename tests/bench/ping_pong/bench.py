@@ -3,6 +3,7 @@
 import pathlib
 import subprocess
 import sys
+import time
 
 
 def bench(build_dir: pathlib.Path) -> None:
@@ -10,6 +11,8 @@ def bench(build_dir: pathlib.Path) -> None:
     server_process = subprocess.Popen(
         [str(build_dir / "bin" / "bench_ping_pong_server")]
     )
+    time.sleep(1)
+
     try:
         client_result = subprocess.run(
             [

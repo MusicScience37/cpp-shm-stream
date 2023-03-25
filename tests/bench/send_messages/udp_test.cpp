@@ -15,7 +15,7 @@
  */
 /*!
  * \file
- * \brief Benchmark of streams of bytes without waiting.
+ * \brief Benchmark of UDP.
  */
 #include <cstdint>
 #include <thread>
