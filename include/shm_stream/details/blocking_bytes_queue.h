@@ -23,6 +23,7 @@
 #include <limits>
 #include <type_traits>
 
+#include <boost/atomic/fences.hpp>
 #include <boost/atomic/ipc_atomic.hpp>
 #include <boost/memory_order.hpp>
 
@@ -229,6 +230,42 @@ public:
         shm_stream_size_t expected_size = max_size()) noexcept {
         const shm_stream_size_t next_read_index =
             atomic_next_read_index_->load(boost::memory_order::acquire);
+
+        const shm_stream_size_t max_reservable_size =
+            calc_reservable_size(next_read_index);
+        reserved_ = std::min(expected_size, max_reservable_size);
+
+        return mutable_bytes_view(buffer_ + next_write_index_, reserved_);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to write.
+     *
+     * \param[in] expected_size Expected number of bytes to reserve to write.
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this queue is a circular
+     * buffer and this function reserves continuous byte sequences from the
+     * circular buffer.
+     * \note After stop of this queue, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] mutable_bytes_view wait_reserve(
+        shm_stream_size_t expected_size = max_size()) noexcept {
+        shm_stream_size_t unexpected_next_read_index = next_write_index_ + 1U;
+        if (unexpected_next_read_index == size_) {
+            unexpected_next_read_index = 0U;
+        }
+
+        shm_stream_size_t next_read_index =
+            atomic_next_read_index_->load(boost::memory_order::relaxed);
+        while (next_read_index == unexpected_next_read_index) {
+            next_read_index = atomic_next_read_index_->wait(
+                unexpected_next_read_index, boost::memory_order::relaxed);
+        }
+        boost::atomics::atomic_thread_fence(boost::memory_order::acquire);
 
         const shm_stream_size_t max_reservable_size =
             calc_reservable_size(next_read_index);
@@ -504,6 +541,39 @@ public:
         shm_stream_size_t expected_size = max_size()) noexcept {
         const shm_stream_size_t next_write_index =
             atomic_next_write_index_->load(boost::memory_order::acquire);
+
+        const shm_stream_size_t max_reservable_size =
+            calc_reservable_size(next_write_index);
+        reserved_ = std::min(expected_size, max_reservable_size);
+
+        return bytes_view(buffer_ + next_read_index_, reserved_);
+    }
+
+    /*!
+     * \brief Wait to reserve some bytes to read.
+     *
+     * \param[in] expected_size Expected number of bytes to reserve to read.
+     * \return Buffer of the reserved bytes.
+     *
+     * \note This function returns when at least one byte is available.
+     * \note This function can return a buffer with a size smaller than the
+     * return value of available_size function, because this queue is a circular
+     * buffer and this function reserves continuous byte sequences from the
+     * circular buffer.
+     * \note After stop of this queue, this function immediately returns empty
+     * buffers.
+     */
+    [[nodiscard]] bytes_view wait_reserve(
+        shm_stream_size_t expected_size = max_size()) noexcept {
+        const shm_stream_size_t unexpected_next_write_index = next_read_index_;
+
+        shm_stream_size_t next_write_index =
+            atomic_next_write_index_->load(boost::memory_order::relaxed);
+        while (next_write_index == unexpected_next_write_index) {
+            next_write_index = atomic_next_write_index_->wait(
+                unexpected_next_write_index, boost::memory_order::relaxed);
+        }
+        boost::atomics::atomic_thread_fence(boost::memory_order::acquire);
 
         const shm_stream_size_t max_reservable_size =
             calc_reservable_size(next_write_index);

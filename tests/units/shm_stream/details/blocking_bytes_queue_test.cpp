@@ -31,6 +31,10 @@
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
 
+constexpr auto wait_time = std::chrono::milliseconds(100);
+constexpr auto timeout = std::chrono::seconds(1);
+
+// NOLINTNEXTLINE
 TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
     using shm_stream::mutable_bytes_view;
     using shm_stream::shm_stream_size_t;
@@ -296,9 +300,6 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
         constexpr shm_stream_size_t buffer_size = 7U;
         std::array<char, buffer_size> raw_buffer{};
 
-        constexpr auto wait_time = std::chrono::milliseconds(300);
-        constexpr auto timeout = std::chrono::seconds(1);
-
         SECTION("when already available") {
             indices.reader() = 3U;
             indices.writer() = 1U;
@@ -422,8 +423,148 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_writer") {
             CHECK(future.get() == 0U);
         }
     }
+
+    SECTION("wait for buffer") {
+        atomic_index_pair_type indices;
+        constexpr shm_stream_size_t buffer_size = 7U;
+        std::array<char, buffer_size> raw_buffer{};
+
+        SECTION("when already available") {
+            indices.reader() = 3U;
+            indices.writer() = 1U;
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 1U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when already available at end") {
+            indices.reader() = 1U;
+            indices.writer() = 6U;  // NOLINT
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 6U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when already available many") {
+            indices.reader() = 3U;  // NOLINT
+            indices.writer() = 3U;  // NOLINT
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 3U);
+            CHECK(buffer.size() == 4U);  // NOLINT
+        }
+
+        SECTION("when stopped already") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.size() == 0U);  // NOLINT
+        }
+
+        SECTION("when available after some time") {
+            indices.reader() = 2U;
+            indices.writer() = 1U;
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            indices.reader() = 3U;
+            indices.reader().notify_all();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 1U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when available after some time") {
+            indices.reader() = 2U;
+            indices.writer() = 1U;
+            writer_type writer{
+                indices, mutable_bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<mutable_bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&writer, &promise] {
+                const auto res = writer.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            writer.stop();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.size() == 0U);  // NOLINT
+        }
+    }
 }
 
+// NOLINTNEXTLINE
 TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
     using shm_stream::bytes_view;
     using shm_stream::shm_stream_size_t;
@@ -686,9 +827,6 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
         constexpr shm_stream_size_t buffer_size = 7U;
         std::array<char, buffer_size> raw_buffer{};
 
-        constexpr auto wait_time = std::chrono::milliseconds(300);
-        constexpr auto timeout = std::chrono::seconds(1);
-
         SECTION("when already available") {
             indices.reader() = 2U;
             indices.writer() = 3U;
@@ -810,6 +948,145 @@ TEST_CASE("shm_stream::details::blocking_bytes_queue_reader") {
             thread.join();
 
             CHECK(future.get() == 0U);
+        }
+    }
+
+    SECTION("wait for buffer") {
+        atomic_index_pair_type indices;
+        constexpr shm_stream_size_t buffer_size = 7U;
+        std::array<char, buffer_size> raw_buffer{};
+
+        SECTION("when already available") {
+            indices.reader() = 2U;
+            indices.writer() = 3U;
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 2U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when already available at end") {
+            indices.reader() = 6U;  // NOLINT
+            indices.writer() = 0U;
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 6U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when already available many") {
+            indices.reader() = 5U;  // NOLINT
+            indices.writer() = 4U;  // NOLINT
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 5U);
+            CHECK(buffer.size() == 2U);  // NOLINT
+        }
+
+        SECTION("when stopped already") {
+            indices.reader() = blocking_bytes_queue_stop_index();
+            indices.writer() = blocking_bytes_queue_stop_index();
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.size() == 0U);  // NOLINT
+        }
+
+        SECTION("when available after some time") {
+            indices.reader() = 3U;
+            indices.writer() = 3U;
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            indices.writer() = 4U;
+            indices.writer().notify_all();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.data() - raw_buffer.data() == 3U);
+            CHECK(buffer.size() == 1U);  // NOLINT
+        }
+
+        SECTION("when stopped after some time") {
+            indices.reader() = 3U;
+            indices.writer() = 3U;
+            reader_type reader{
+                indices, bytes_view(raw_buffer.data(), buffer_size)};
+
+            std::promise<bytes_view> promise;
+            auto future = promise.get_future();
+            std::thread thread{[&reader, &promise] {
+                const auto res = reader.wait_reserve();
+                promise.set_value_at_thread_exit(res);
+            }};
+
+            std::this_thread::sleep_for(wait_time);
+
+            reader.stop();
+
+            REQUIRE(future.wait_for(timeout) == std::future_status::ready);
+            thread.join();
+
+            const auto buffer = future.get();
+            CHECK(buffer.size() == 0U);  // NOLINT
         }
     }
 }
