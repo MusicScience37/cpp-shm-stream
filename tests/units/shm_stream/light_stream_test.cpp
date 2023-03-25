@@ -53,6 +53,72 @@ TEST_CASE("shm_stream::light_stream_writer") {
         CHECK_FALSE(writer.is_opened());  // NOLINT
     }
 
+    SECTION("close a stream explicitly") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+        CHECK(writer.is_opened());
+
+        writer.close();
+
+        CHECK_FALSE(writer.is_opened());
+    }
+
+    SECTION("get the available size") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+
+        CHECK(writer.available_size() == buffer_size - 1U);
+    }
+
+    SECTION("reserve with size") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+        CHECK(writer.available_size() == buffer_size - 1U);
+
+        constexpr shm_stream_size_t expected_size = 5U;
+        const auto buffer = writer.try_reserve(expected_size);
+
+        CHECK(buffer.size() == expected_size);
+    }
+
+    SECTION("reserve with large size") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+        CHECK(writer.available_size() == buffer_size - 1U);
+
+        constexpr shm_stream_size_t expected_size = 100U;
+        const auto buffer = writer.try_reserve(expected_size);
+
+        CHECK(buffer.size() == buffer_size - 1U);
+    }
+
+    SECTION("reserve bytes as many as possible") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+        CHECK(writer.available_size() == buffer_size - 1U);
+
+        const auto buffer = writer.try_reserve();
+
+        CHECK(buffer.size() == buffer_size - 1U);
+    }
+
+    SECTION("commit written bytes") {
+        light_stream_writer writer;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        writer.open(stream_name, buffer_size);
+        CHECK(writer.available_size() == buffer_size - 1U);
+        (void)writer.try_reserve();
+
+        writer.commit(3U);
+
+        CHECK(writer.available_size() == buffer_size - 4U);  // NOLINT
+    }
+
     boost::interprocess::shared_memory_object::remove(
         ("shm_stream_light_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
@@ -61,6 +127,7 @@ TEST_CASE("shm_stream::light_stream_writer") {
 
 TEST_CASE("shm_stream::light_stream_reader") {
     using shm_stream::light_stream_reader;
+    using shm_stream::light_stream_writer;
     using shm_stream::shm_stream_size_t;
 
     const std::string stream_name = "light_stream_reader_test";
@@ -70,23 +137,105 @@ TEST_CASE("shm_stream::light_stream_reader") {
         ("shm_stream_light_stream_lock_" + stream_name).c_str());
 
     SECTION("open a stream") {
-        light_stream_reader writer;
-        CHECK_FALSE(writer.is_opened());
+        light_stream_reader reader;
+        CHECK_FALSE(reader.is_opened());
 
         constexpr shm_stream_size_t buffer_size = 10U;
-        writer.open(stream_name, buffer_size);
-        CHECK(writer.is_opened());
+        reader.open(stream_name, buffer_size);
+        CHECK(reader.is_opened());
     }
 
     SECTION("move construct") {
-        light_stream_reader writer;
+        light_stream_reader reader;
         constexpr shm_stream_size_t buffer_size = 10U;
-        writer.open(stream_name, buffer_size);
-        CHECK(writer.is_opened());
+        reader.open(stream_name, buffer_size);
+        CHECK(reader.is_opened());
 
-        light_stream_reader moved{std::move(writer)};
+        light_stream_reader moved{std::move(reader)};
         CHECK(moved.is_opened());
-        CHECK_FALSE(writer.is_opened());  // NOLINT
+        CHECK_FALSE(reader.is_opened());  // NOLINT
+    }
+
+    SECTION("close a stream explicitly") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        CHECK(reader.is_opened());
+
+        reader.close();
+
+        CHECK_FALSE(reader.is_opened());
+    }
+
+    SECTION("get the available size") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        light_stream_writer writer;
+        writer.open(stream_name, buffer_size);
+        (void)writer.try_reserve();
+        writer.commit(3U);
+
+        CHECK(reader.available_size() == 3U);
+    }
+
+    SECTION("reserve with size") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        light_stream_writer writer;
+        writer.open(stream_name, buffer_size);
+        (void)writer.try_reserve();
+        writer.commit(3U);
+
+        constexpr shm_stream_size_t expected_size = 2U;
+        const auto buffer = reader.try_reserve(expected_size);
+
+        CHECK(buffer.size() == expected_size);
+    }
+
+    SECTION("reserve with large size") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        light_stream_writer writer;
+        writer.open(stream_name, buffer_size);
+        (void)writer.try_reserve();
+        writer.commit(3U);
+
+        constexpr shm_stream_size_t expected_size = 100U;
+        const auto buffer = reader.try_reserve(expected_size);
+
+        CHECK(buffer.size() == 3U);
+    }
+
+    SECTION("reserve bytes as many as possible") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        light_stream_writer writer;
+        writer.open(stream_name, buffer_size);
+        (void)writer.try_reserve();
+        writer.commit(3U);
+
+        const auto buffer = reader.try_reserve();
+
+        CHECK(buffer.size() == 3U);
+    }
+
+    SECTION("commit read bytes") {
+        light_stream_reader reader;
+        constexpr shm_stream_size_t buffer_size = 10U;
+        reader.open(stream_name, buffer_size);
+        light_stream_writer writer;
+        writer.open(stream_name, buffer_size);
+        (void)writer.try_reserve();
+        writer.commit(3U);
+        (void)reader.try_reserve();
+
+        reader.commit(2U);
+
+        CHECK(reader.available_size() == 1U);
     }
 
     boost::interprocess::shared_memory_object::remove(
