@@ -182,6 +182,20 @@ TEST_CASE("shm_stream::blocking_stream_writer") {
         CHECK(writer.available_size() == buffer_size - 4U);  // NOLINT
     }
 
+    SECTION("call functions for closed stream") {
+        blocking_stream_writer writer;
+
+        CHECK(writer.available_size() == 0U);
+        CHECK(writer.wait() == 0U);
+        CHECK_NOTHROW(writer.stop());
+        CHECK(writer.is_stopped());
+        CHECK(writer.try_reserve(1U).size() == 0U);   // NOLINT
+        CHECK(writer.try_reserve().size() == 0U);     // NOLINT
+        CHECK(writer.wait_reserve(1U).size() == 0U);  // NOLINT
+        CHECK(writer.wait_reserve().size() == 0U);    // NOLINT
+        CHECK_NOTHROW(writer.commit(1U));
+    }
+
     boost::interprocess::shared_memory_object::remove(
         ("shm_stream_blocking_stream_data_" + stream_name).c_str());
     boost::interprocess::named_mutex::remove(
@@ -410,6 +424,20 @@ TEST_CASE("shm_stream::blocking_stream_reader") {
         reader.commit(2U);
 
         CHECK(reader.available_size() == 1U);
+    }
+
+    SECTION("call functions for closed stream") {
+        blocking_stream_reader reader;
+
+        CHECK(reader.available_size() == 0U);
+        CHECK(reader.wait() == 0U);
+        CHECK_NOTHROW(reader.stop());
+        CHECK(reader.is_stopped());
+        CHECK(reader.try_reserve(1U).size() == 0U);   // NOLINT
+        CHECK(reader.try_reserve().size() == 0U);     // NOLINT
+        CHECK(reader.wait_reserve(1U).size() == 0U);  // NOLINT
+        CHECK(reader.wait_reserve().size() == 0U);    // NOLINT
+        CHECK_NOTHROW(reader.commit(1U));
     }
 
     boost::interprocess::shared_memory_object::remove(
