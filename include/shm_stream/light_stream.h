@@ -98,9 +98,9 @@ public:
     [[nodiscard]] bool is_opened() const noexcept { return writer_.has_obj(); }
 
     /*!
-     * \brief Get the size of the available bytes to write.
+     * \brief Get the number of the available bytes to write.
      *
-     * \return Size of the available bytes to write.
+     * \return Number of the available bytes to write.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         return c_shm_stream_light_stream_writer_available_size(writer_.get());
@@ -227,9 +227,9 @@ public:
     [[nodiscard]] bool is_opened() const noexcept { return reader_.has_obj(); }
 
     /*!
-     * \brief Get the size of the available bytes to read.
+     * \brief Get the number of the available bytes to read.
      *
-     * \return Size of the available bytes to read.
+     * \return Number of the available bytes to read.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         return c_shm_stream_light_stream_reader_available_size(reader_.get());

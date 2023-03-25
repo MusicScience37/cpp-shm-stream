@@ -15,8 +15,7 @@
  */
 /*!
  * \file
- * \brief Definition of queues of bytes without waiting (possibly lock-free and
- * wait-free).
+ * \brief Definition of queues of bytes with blocking operations.
  */
 #pragma once
 
@@ -25,29 +24,25 @@
 #include <type_traits>
 
 #include <boost/atomic/ipc_atomic.hpp>
-#include <boost/memory_order.hpp>
-#include <fmt/format.h>
 
 #include "shm_stream/bytes_view.h"
 #include "shm_stream/c_interface/error_codes.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/atomic_index_pair.h"
-#include "shm_stream/shm_stream_assert.h"
 #include "shm_stream/shm_stream_exception.h"
 
 namespace shm_stream {
 namespace details {
 
 /*!
- * \brief Class of writer of queues of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Class of writer of queues of bytes with blocking operations.
  *
  * \tparam AtomicType Type of atomic variables.
  *
  * \thread_safety All operation is safe if only one writer exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
-class light_bytes_queue_writer {
+class blocking_bytes_queue_writer {
 public:
     //! Type of the atomic variables.
     using atomic_type = AtomicType;
@@ -94,7 +89,8 @@ public:
      * bytes for the writer and the reader.
      * \param[in] buffer Buffer of data.
      */
-    light_bytes_queue_writer(atomic_index_pair_view<atomic_type> atomic_indices,
+    blocking_bytes_queue_writer(
+        atomic_index_pair_view<atomic_type> atomic_indices,
         mutable_bytes_view buffer)
         : atomic_next_read_index_(&atomic_indices.reader()),
           atomic_next_write_index_(&atomic_indices.writer()),
@@ -117,37 +113,54 @@ public:
     }
 
     // Prevent copy.
-    light_bytes_queue_writer(const light_bytes_queue_writer&) = delete;
-    auto operator=(const light_bytes_queue_writer&) = delete;
+    blocking_bytes_queue_writer(const blocking_bytes_queue_writer&) = delete;
+    auto operator=(const blocking_bytes_queue_writer&) = delete;
 
     //! Move constructor.
-    light_bytes_queue_writer(light_bytes_queue_writer&&) noexcept = default;
+    blocking_bytes_queue_writer(
+        blocking_bytes_queue_writer&&) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    auto operator=(light_bytes_queue_writer&&) noexcept
-        -> light_bytes_queue_writer& = default;
+    auto operator=(blocking_bytes_queue_writer&&) noexcept
+        -> blocking_bytes_queue_writer& = default;
 
     //! Destructor.
-    ~light_bytes_queue_writer() noexcept = default;
+    ~blocking_bytes_queue_writer() noexcept = default;
 
     /*!
-     * \brief Get the number of the available bytes to write.
+     * \brief Get the number of available bytes to write.
      *
      * \return Number of the available bytes to write.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
+        const shm_stream_size_t next_read_index =
+            atomic_next_read_index_->load(boost::memory_order::relaxed);
+        return calc_available_size(next_read_index);
+    }
+
+    /*!
+     * \brief Wait until some bytes are available.
+     *
+     * \return Number of the available bytes to write.
+     */
+    shm_stream_size_t wait() const noexcept {
+        shm_stream_size_t unexpected_next_read_index = next_write_index_ + 1U;
+        if (unexpected_next_read_index == size_) {
+            unexpected_next_read_index = 0U;
+        }
+
         shm_stream_size_t next_read_index =
             atomic_next_read_index_->load(boost::memory_order::relaxed);
-
-        if (next_read_index <= next_write_index_) {
-            next_read_index += size_;
-            SHM_STREAM_ASSERT(next_read_index > next_write_index_);
+        while (next_read_index == unexpected_next_read_index) {
+            next_read_index = atomic_next_read_index_->wait(
+                unexpected_next_read_index, boost::memory_order::relaxed);
         }
-        return next_read_index - next_write_index_ - 1U;
+
+        return calc_available_size(next_read_index);
     }
 
     /*!
@@ -194,6 +207,7 @@ public:
 
         atomic_next_write_index_->store(
             next_write_index_, boost::memory_order::release);
+        atomic_next_write_index_->notify_all();
 
         reserved_ = 0U;
     }
@@ -216,6 +230,21 @@ private:
         return size_ - next_write_index_;
     }
 
+    /*!
+     * \brief Calculate the number of available bytes to write.
+     *
+     * \param[in] next_read_index Value of atomic_next_read_index_.
+     * \return Number of the available bytes to write.
+     */
+    [[nodiscard]] shm_stream_size_t calc_available_size(
+        shm_stream_size_t next_read_index) const noexcept {
+        if (next_read_index <= next_write_index_) {
+            next_read_index += size_;
+            SHM_STREAM_ASSERT(next_read_index > next_write_index_);
+        }
+        return next_read_index - next_write_index_ - 1U;
+    }
+
     //! Atomic variable of the index of the next byte to read.
     atomic_type* atomic_next_read_index_;
 
@@ -236,15 +265,14 @@ private:
 };
 
 /*!
- * \brief Class of reader of queues of bytes without waiting  (possibly
- * lock-free and wait-free).
+ * \brief Class of reader of queues of bytes with blocking operations.
  *
  * \tparam AtomicType Type of atomic variables.
  *
  * \thread_safety All operation is safe if only one writer exists.
  */
 template <typename AtomicType = boost::atomics::ipc_atomic<shm_stream_size_t>>
-class light_bytes_queue_reader {
+class blocking_bytes_queue_reader {
 public:
     //! Type of the atomic variables.
     using atomic_type = AtomicType;
@@ -291,7 +319,7 @@ public:
      * bytes for the writer and the reader.
      * \param[in] buffer Buffer of data.
      */
-    light_bytes_queue_reader(
+    blocking_bytes_queue_reader(
         atomic_index_pair_view<atomic_type> atomic_indices, bytes_view buffer)
         : atomic_next_read_index_(&atomic_indices.reader()),
           atomic_next_write_index_(&atomic_indices.writer()),
@@ -314,22 +342,23 @@ public:
     }
 
     // Prevent copy.
-    light_bytes_queue_reader(const light_bytes_queue_reader&) = delete;
-    auto operator=(const light_bytes_queue_reader&) = delete;
+    blocking_bytes_queue_reader(const blocking_bytes_queue_reader&) = delete;
+    auto operator=(const blocking_bytes_queue_reader&) = delete;
 
     //! Move constructor.
-    light_bytes_queue_reader(light_bytes_queue_reader&&) noexcept = default;
+    blocking_bytes_queue_reader(
+        blocking_bytes_queue_reader&&) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    auto operator=(light_bytes_queue_reader&&) noexcept
-        -> light_bytes_queue_reader& = default;
+    auto operator=(blocking_bytes_queue_reader&&) noexcept
+        -> blocking_bytes_queue_reader& = default;
 
     //! Destructor.
-    ~light_bytes_queue_reader() noexcept = default;
+    ~blocking_bytes_queue_reader() noexcept = default;
 
     /*!
      * \brief Get the number of the available bytes to read.
@@ -339,13 +368,25 @@ public:
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
         shm_stream_size_t next_write_index =
             atomic_next_write_index_->load(boost::memory_order::relaxed);
+        return calc_available_size(next_write_index);
+    }
 
-        if (next_write_index < next_read_index_) {
-            next_write_index += size_;
+    /*!
+     * \brief Wait until some bytes are available.
+     *
+     * \return Number of the available bytes to read.
+     */
+    shm_stream_size_t wait() const noexcept {
+        const shm_stream_size_t unexpected_next_write_index = next_read_index_;
+
+        shm_stream_size_t next_write_index =
+            atomic_next_write_index_->load(boost::memory_order::relaxed);
+        while (next_write_index == unexpected_next_write_index) {
+            next_write_index = atomic_next_write_index_->wait(
+                unexpected_next_write_index, boost::memory_order::relaxed);
         }
-        SHM_STREAM_ASSERT(next_read_index_ <= next_write_index);
 
-        return next_write_index - next_read_index_;
+        return calc_available_size(next_write_index);
     }
 
     /*!
@@ -392,6 +433,7 @@ public:
 
         atomic_next_read_index_->store(
             next_read_index_, boost::memory_order::release);
+        atomic_next_read_index_->notify_all();
 
         reserved_ = 0U;
     }
@@ -409,6 +451,22 @@ private:
             return next_write_index - next_read_index_;
         }
         return size_ - next_read_index_;
+    }
+
+    /*!
+     * \brief Calculate the number of available bytes.
+     *
+     * \param[in] next_write_index Value of atomic_next_write_index_.
+     * \return Number of available bytes.
+     */
+    [[nodiscard]] shm_stream_size_t calc_available_size(
+        shm_stream_size_t next_write_index) const noexcept {
+        if (next_write_index < next_read_index_) {
+            next_write_index += size_;
+        }
+        SHM_STREAM_ASSERT(next_read_index_ <= next_write_index);
+
+        return next_write_index - next_read_index_;
     }
 
     //! Atomic variable of the index of the next byte to read.

@@ -65,10 +65,10 @@ SHM_STREAM_EXPORT void c_shm_stream_light_stream_writer_destroy(
     c_shm_stream_light_stream_writer_t* writer);
 
 /*!
- * \brief Get the size of the available bytes to write.
+ * \brief Get the number of the available bytes to write.
  *
  * \param[in] writer Writer.
- * \return Size of the available bytes to write.
+ * \return Number of the available bytes to write.
  */
 SHM_STREAM_EXPORT c_shm_stream_size_t
 c_shm_stream_light_stream_writer_available_size(
