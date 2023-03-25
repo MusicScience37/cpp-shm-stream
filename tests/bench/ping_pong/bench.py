@@ -6,12 +6,19 @@ import sys
 
 
 def bench(build_dir: pathlib.Path) -> None:
+    bench_results_dir = build_dir / "bench" / "bench_ping_pong"
     server_process = subprocess.Popen(
         [str(build_dir / "bin" / "bench_ping_pong_server")]
     )
     try:
         client_result = subprocess.run(
-            [str(build_dir / "bin" / "bench_ping_pong_client")],
+            [
+                str(build_dir / "bin" / "bench_ping_pong_client"),
+                "--plot",
+                str(bench_results_dir),
+                "--json",
+                str(bench_results_dir / "result.json"),
+            ],
             check=False,
         )
     finally:
@@ -23,4 +30,4 @@ def bench(build_dir: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-    bench(pathlib.Path(sys.argv[1]))
+    bench(pathlib.Path(sys.argv[1]).absolute())
