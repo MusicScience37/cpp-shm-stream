@@ -71,6 +71,7 @@
     "pytest",
     "pytestconfig",
     "realpath",
+    "rpclib",
     "SAST",
     "sphinxcontrib",
     "streamd",
