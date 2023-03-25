@@ -1,3 +1,4 @@
+#include "shm_stream/blocking_stream_test.cpp"  // NOLINT(bugprone-suspicious-include)
 #include "shm_stream/c_interface/c_headers.c"  // NOLINT(bugprone-suspicious-include)
 #include "shm_stream/c_interface/error_codes_test.cpp"  // NOLINT(bugprone-suspicious-include)
 #include "shm_stream/c_interface/translate_error_test.cpp"  // NOLINT(bugprone-suspicious-include)

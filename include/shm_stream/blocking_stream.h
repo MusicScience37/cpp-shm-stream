@@ -15,15 +15,14 @@
  */
 /*!
  * \file
- * \brief Definition of light streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Definition of blocking streams of bytes with wait operations.
  */
 #pragma once
 
 #include "shm_stream/bytes_view.h"
-#include "shm_stream/c_interface/light_stream_common.h"
-#include "shm_stream/c_interface/light_stream_reader.h"
-#include "shm_stream/c_interface/light_stream_writer.h"
+#include "shm_stream/c_interface/blocking_stream_common.h"
+#include "shm_stream/c_interface/blocking_stream_reader.h"
+#include "shm_stream/c_interface/blocking_stream_writer.h"
 #include "shm_stream/c_interface/string_view.h"
 #include "shm_stream/common_types.h"
 #include "shm_stream/details/smart_ptr.h"
@@ -33,41 +32,42 @@
 namespace shm_stream {
 
 /*!
- * \brief Class of writer of light streams of bytes without waiting (possibly
- * lock-free and wait-free).
+ * \brief Class of writer of blocking streams of bytes with wait operations.
  *
- * \thread_safety All operation is safe if only one writer exists.
+ * \thread_safety All operation is safe if only one writer exists,
+ * except for stop and is_stopped functions which are safe to call from any
+ * threads.
  */
-class light_stream_writer {
+class blocking_stream_writer {
 public:
     /*!
      * \brief Constructor.
      */
-    light_stream_writer() = default;
+    blocking_stream_writer() = default;
 
     // Prevent copy.
-    light_stream_writer(const light_stream_writer&) = delete;
-    auto operator=(const light_stream_writer&) = delete;
+    blocking_stream_writer(const blocking_stream_writer&) = delete;
+    auto operator=(const blocking_stream_writer&) = delete;
 
     /*!
      * \brief Move constructor.
      */
-    light_stream_writer(light_stream_writer&& /*obj*/) noexcept = default;
+    blocking_stream_writer(blocking_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
      *
      * \return This.
      */
-    light_stream_writer& operator=(
-        light_stream_writer&& /*obj*/) noexcept = default;
+    blocking_stream_writer& operator=(
+        blocking_stream_writer&& /*obj*/) noexcept = default;
 
     /*!
      * \brief Destructor.
      *
      * \note This function will automatically close this stream.
      */
-    ~light_stream_writer() noexcept = default;
+    ~blocking_stream_writer() noexcept = default;
 
     /*!
      * \brief Open a stream.
@@ -76,11 +76,12 @@ public:
      * \param[in] buffer_size Size of the buffer.
      */
     void open(string_view name, shm_stream_size_t buffer_size) {
-        c_shm_stream_light_stream_writer_t* writer{nullptr};
-        details::throw_if_error(c_shm_stream_light_stream_writer_create(&writer,
-            c_shm_stream_string_view_t{name.data(), name.size()}, buffer_size));
-        writer_ = details::smart_ptr<c_shm_stream_light_stream_writer_t>(
-            writer, c_shm_stream_light_stream_writer_destroy);
+        c_shm_stream_blocking_stream_writer_t* writer{nullptr};
+        details::throw_if_error(c_shm_stream_blocking_stream_writer_create(
+            &writer, c_shm_stream_string_view_t{name.data(), name.size()},
+            buffer_size));
+        writer_ = details::smart_ptr<c_shm_stream_blocking_stream_writer_t>(
+            writer, c_shm_stream_blocking_stream_writer_destroy);
     }
 
     /*!
@@ -103,9 +104,12 @@ public:
      * \brief Get the number of the available bytes to write.
      *
      * \return Number of the available bytes to write.
+     *
+     * \note After stop of this stream, this function immediately returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
-        return c_shm_stream_light_stream_writer_available_size(writer_.get());
+        return c_shm_stream_blocking_stream_writer_available_size(
+            writer_.get());
     }
 
     /*!
@@ -120,10 +124,11 @@ public:
      * return value of available_size function, because this stream uses a
      * circular buffer in the implementation and this function reserves
      * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function returns empty buffers.
      */
     [[nodiscard]] mutable_bytes_view try_reserve(
         shm_stream_size_t expected_size) noexcept {
-        const auto buf = c_shm_stream_light_stream_writer_try_reserve(
+        const auto buf = c_shm_stream_blocking_stream_writer_try_reserve(
             writer_.get(), expected_size);
         return mutable_bytes_view(buf.data, buf.size);
     }
@@ -139,10 +144,11 @@ public:
      * return value of available_size function, because this stream uses a
      * circular buffer in the implementation and this function reserves
      * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function returns empty buffers.
      */
     [[nodiscard]] mutable_bytes_view try_reserve() noexcept {
         const auto buf =
-            c_shm_stream_light_stream_writer_try_reserve_all(writer_.get());
+            c_shm_stream_blocking_stream_writer_try_reserve_all(writer_.get());
         return mutable_bytes_view(buf.data, buf.size);
     }
 
@@ -152,37 +158,39 @@ public:
      * \param[in] written_size Number of written bytes to save.
      */
     void commit(shm_stream_size_t written_size) noexcept {
-        c_shm_stream_light_stream_writer_commit(writer_.get(), written_size);
+        c_shm_stream_blocking_stream_writer_commit(writer_.get(), written_size);
     }
 
 private:
     //! Actual writer in C interface.
-    details::smart_ptr<c_shm_stream_light_stream_writer_t> writer_{};
+    details::smart_ptr<c_shm_stream_blocking_stream_writer_t> writer_{};
 };
 
 /*!
- * \brief Class of reader of light streams of bytes without waiting (possibly
+ * \brief Class of reader of blocking streams of bytes without waiting (possibly
  * lock-free and wait-free).
  *
- * \thread_safety All operation is safe if only one reader exists.
+ * \thread_safety All operation is safe if only one reader exists,
+ * except for stop and is_stopped functions which are safe to call from any
+ * threads.
  */
-class light_stream_reader {
+class blocking_stream_reader {
 public:
     /*!
      * \brief Constructor.
      */
-    light_stream_reader() = default;
+    blocking_stream_reader() = default;
 
     // Prevent copy.
-    light_stream_reader(const light_stream_reader&) = delete;
-    auto operator=(const light_stream_reader&) = delete;
+    blocking_stream_reader(const blocking_stream_reader&) = delete;
+    auto operator=(const blocking_stream_reader&) = delete;
 
     /*!
      * \brief Move constructor.
      *
      * \param[in] obj Object to move from.
      */
-    light_stream_reader(light_stream_reader&& obj) noexcept = default;
+    blocking_stream_reader(blocking_stream_reader&& obj) noexcept = default;
 
     /*!
      * \brief Move assignment operator.
@@ -190,15 +198,15 @@ public:
      * \param[in] obj Object to move from.
      * \return This.
      */
-    light_stream_reader& operator=(
-        light_stream_reader&& obj) noexcept = default;
+    blocking_stream_reader& operator=(
+        blocking_stream_reader&& obj) noexcept = default;
 
     /*!
      * \brief Destructor.
      *
      * \note This function will automatically close this stream.
      */
-    ~light_stream_reader() noexcept = default;
+    ~blocking_stream_reader() noexcept = default;
 
     /*!
      * \brief Open a stream.
@@ -207,11 +215,12 @@ public:
      * \param[in] buffer_size Size of the buffer.
      */
     void open(string_view name, shm_stream_size_t buffer_size) {
-        c_shm_stream_light_stream_reader_t* reader{nullptr};
-        details::throw_if_error(c_shm_stream_light_stream_reader_create(&reader,
-            c_shm_stream_string_view_t{name.data(), name.size()}, buffer_size));
-        reader_ = details::smart_ptr<c_shm_stream_light_stream_reader_t>(
-            reader, c_shm_stream_light_stream_reader_destroy);
+        c_shm_stream_blocking_stream_reader_t* reader{nullptr};
+        details::throw_if_error(c_shm_stream_blocking_stream_reader_create(
+            &reader, c_shm_stream_string_view_t{name.data(), name.size()},
+            buffer_size));
+        reader_ = details::smart_ptr<c_shm_stream_blocking_stream_reader_t>(
+            reader, c_shm_stream_blocking_stream_reader_destroy);
     }
 
     /*!
@@ -234,9 +243,12 @@ public:
      * \brief Get the number of the available bytes to read.
      *
      * \return Number of the available bytes to read.
+     *
+     * \note After stop of this stream, this function immediately returns zero.
      */
     [[nodiscard]] shm_stream_size_t available_size() const noexcept {
-        return c_shm_stream_light_stream_reader_available_size(reader_.get());
+        return c_shm_stream_blocking_stream_reader_available_size(
+            reader_.get());
     }
 
     /*!
@@ -251,10 +263,11 @@ public:
      * return value of available_size function, because this stream uses a
      * circular buffer in the implementation and this function reserves
      * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function returns empty buffers.
      */
     [[nodiscard]] bytes_view try_reserve(
         shm_stream_size_t expected_size) noexcept {
-        const auto buf = c_shm_stream_light_stream_reader_try_reserve(
+        const auto buf = c_shm_stream_blocking_stream_reader_try_reserve(
             reader_.get(), expected_size);
         return bytes_view(buf.data, buf.size);
     }
@@ -270,10 +283,11 @@ public:
      * return value of available_size function, because this stream uses a
      * circular buffer in the implementation and this function reserves
      * continuous byte sequences from the circular buffer.
+     * \note After stop of this stream, this function returns empty buffers.
      */
     [[nodiscard]] bytes_view try_reserve() noexcept {
         const auto buf =
-            c_shm_stream_light_stream_reader_try_reserve_all(reader_.get());
+            c_shm_stream_blocking_stream_reader_try_reserve_all(reader_.get());
         return bytes_view(buf.data, buf.size);
     }
 
@@ -284,31 +298,31 @@ public:
      * \param[in] read_size Number of read bytes to save.
      */
     void commit(shm_stream_size_t read_size) noexcept {
-        c_shm_stream_light_stream_reader_commit(reader_.get(), read_size);
+        c_shm_stream_blocking_stream_reader_commit(reader_.get(), read_size);
     }
 
 private:
     //! Actual reader in C interface.
-    details::smart_ptr<c_shm_stream_light_stream_reader_t> reader_{};
+    details::smart_ptr<c_shm_stream_blocking_stream_reader_t> reader_{};
 };
 
 /*!
- * \brief Classes and functions of light streams of bytes without waiting
+ * \brief Classes and functions of blocking streams of bytes without waiting
  * (possibly lock-free and wait-free).
  */
-namespace light_stream {
+namespace blocking_stream {
 
 /*!
  * \brief Class of writer of streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-using writer = light_stream_writer;
+using writer = blocking_stream_writer;
 
 /*!
  * \brief Class of reader of streams of bytes without waiting (possibly
  * lock-free and wait-free).
  */
-using reader = light_stream_reader;
+using reader = blocking_stream_reader;
 
 /*!
  * \brief Create a stream.
@@ -317,7 +331,7 @@ using reader = light_stream_reader;
  * \param[in] buffer_size Size of the buffer.
  */
 inline void create(string_view name, shm_stream_size_t buffer_size) {
-    details::throw_if_error(c_shm_stream_light_stream_create(
+    details::throw_if_error(c_shm_stream_blocking_stream_create(
         c_shm_stream_string_view_t{name.data(), name.size()}, buffer_size));
 }
 
@@ -327,10 +341,10 @@ inline void create(string_view name, shm_stream_size_t buffer_size) {
  * \param[in] name Name of the stream.
  */
 inline void remove(string_view name) {
-    c_shm_stream_light_stream_remove(
+    c_shm_stream_blocking_stream_remove(
         c_shm_stream_string_view_t{name.data(), name.size()});
 }
 
-}  // namespace light_stream
+}  // namespace blocking_stream
 
 }  // namespace shm_stream

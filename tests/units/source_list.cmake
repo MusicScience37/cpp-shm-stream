@@ -1,4 +1,5 @@
 set(SOURCE_FILES
+    shm_stream/blocking_stream_test.cpp
     shm_stream/c_interface/c_headers.c
     shm_stream/c_interface/error_codes_test.cpp
     shm_stream/c_interface/translate_error_test.cpp

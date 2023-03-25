@@ -30,7 +30,7 @@ namespace details {
  *
  * \param[in] code Error code.
  */
-void throw_if_error(c_shm_stream_error_code_t code) {
+inline void throw_if_error(c_shm_stream_error_code_t code) {
     if (code == c_shm_stream_error_code_success) {
         return;
     }
