@@ -50,6 +50,7 @@
     "hicpp",
     "INLINES",
     "INTEG",
+    "interprocess",
     "interruptible",
     "IWYU",
     "Kabashima",
