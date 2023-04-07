@@ -101,6 +101,7 @@ test release:
         CXX_STANDARD: 14
   image: ${IMAGE_PATH}:${COMPILER_TYPE}
   variables:
+    GIT_SUBMODULE_STRATEGY: recursive
     BUILD_TYPE: Release
     BUILD_DIR: build_${COMPILER_TYPE}_release
     CCACHE_DIR: ${CI_PROJECT_DIR}/.cache
@@ -112,14 +113,13 @@ test release:
     - poetry env use 3.10
     - poetry install
     - mkdir $BUILD_DIR
-    - cd $BUILD_DIR
-    - poetry run conan profile new --force --detect default
-    - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
-    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
-    - poetry run conan install --build missing -s build_type=$BUILD_TYPE -o requirements_for_tests=True ..
-    - cd ../
+    - apt-get update
+    - apt-get install -y --no-install-recommends curl zip unzip tar
+    - ./vcpkg/bootstrap-vcpkg.sh
   script:
-    - cmake -S ./ -B $BUILD_DIR
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
@@ -131,7 +131,6 @@ test release:
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
       -DCMAKE_CXX_STANDARD=$CXX_STANDARD
-    - cd $BUILD_DIR
     - cmake --build .
     - ctest -V
   cache:
@@ -173,7 +172,9 @@ test debug:
     BUILD_TYPE: Debug
     BUILD_DIR: build_${COMPILER_TYPE}_debug
   script:
-    - cmake -S ./ -B $BUILD_DIR
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
@@ -181,7 +182,6 @@ test debug:
       -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=ON
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       -DCMAKE_CXX_STANDARD=$CXX_STANDARD
-    - cd $BUILD_DIR
     - cmake --build .
     - ctest -V
 
@@ -197,7 +197,9 @@ static analysis:
     BUILD_TYPE: Debug
     BUILD_DIR: build_static_analysis
   script:
-    - cmake -S ./ -B ${BUILD_DIR}
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
@@ -206,6 +208,7 @@ static analysis:
       -D${UPPER_PROJECT_NAME}_BUILD_EXAMPLES=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CPP_WARNINGS:BOOL=ON
       -DCMAKE_CXX_STANDARD=$CXX_STANDARD
+    - cd ..
     - poetry run clang-tidy-checker -b ${BUILD_DIR}
 
 clang coverage:
@@ -219,7 +222,9 @@ clang coverage:
   variables:
     BUILD_DIR: build_clang_coverage
   script:
-    - cmake -S ./ -B $BUILD_DIR
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=Debug
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
@@ -228,7 +233,6 @@ clang coverage:
       "-DCMAKE_CXX_FLAGS=-fprofile-instr-generate -fcoverage-mapping"
       "-DCMAKE_MODULE_LINKER_FLAGS=-fprofile-instr-generate -fcoverage-mapping"
       -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
-    - cd $BUILD_DIR
     - mkdir coverage
     - export LLVM_PROFILE_FILE=$(pwd)/coverage/coverage_%p.profraw
     - cmake --build .
@@ -264,7 +268,9 @@ clang-13-asan-ubsan:
     BUILD_DIR: build_clang_asan_ubsan
     ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
   script:
-    - cmake -S ./ -B $BUILD_DIR
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=Debug
       -D${UPPER_PROJECT_NAME}_TESTING:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_UNIT_TESTS=ON
@@ -272,48 +278,8 @@ clang-13-asan-ubsan:
       -D${UPPER_PROJECT_NAME}_WRITE_JUNIT:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_AUSAN:BOOL=ON
       -D${UPPER_PROJECT_NAME}_ENABLE_CCACHE:BOOL=ON
-    - cd $BUILD_DIR
     - cmake --build .
     - ctest -V
-
-# TODO
-.clang-13-conan:
-  needs: []
-  image: musicscience37/clang-ci:clang13
-  variables:
-    CONAN_CHANNEL: "testing"
-  script:
-    - mkdir -p .venv
-    - poetry config virtualenvs.in-project true
-    - poetry env use 3.10
-    - poetry install
-    - poetry run conan profile new --force --detect default
-    - poetry run conan profile update settings.compiler.libcxx=libc++ default
-    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
-    - poetry run conan create --build missing --test-folder tests/conan_package . ${CONAN_USER}/${CONAN_CHANNEL}
-  interruptible: true
-
-# TODO
-.clang-13-conan-release:
-  stage: deploy
-  needs: []
-  image: musicscience37/clang-ci:clang13
-  variables:
-    CONAN_CHANNEL: "stable"
-  script:
-    - mkdir -p .venv
-    - poetry config virtualenvs.in-project true
-    - poetry env use 3.10
-    - poetry install
-    - poetry run conan profile new --force --detect default
-    - poetry run conan profile update settings.compiler.libcxx=libc++ default
-    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
-    - poetry run conan remote add -f cpp-shm-stream https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/conan
-    - poetry run conan create --build missing --test-folder tests/conan_package . ${CONAN_USER}/${CONAN_CHANNEL}
-    - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} poetry run conan upload -r cpp-shm-stream ${CONAN_PACKAGE_NAME} -c --all
-  only:
-    - tags
-  interruptible: true
 
 doc:
   stage: test
@@ -330,17 +296,16 @@ doc:
     - poetry env use 3.10
     - poetry install
     - mkdir $BUILD_DIR
-    - cd $BUILD_DIR
-    - poetry run conan profile new --force --detect default
-    - poetry run conan profile update settings.compiler.libcxx=$CONAN_LIBCXX default
-    - poetry run conan remote add -f cpp-stat-bench $CPP_STAT_BENCH_CONAN_REGISTRY
-    - poetry run conan install --build missing -s build_type=$BUILD_TYPE ..
-    - cd ../
+    - apt-get update
+    - apt-get install -y --no-install-recommends curl zip unzip tar
+    - ./vcpkg/bootstrap-vcpkg.sh
   script:
-    - cmake -S ./ -B build_doc
+    - cd $BUILD_DIR
+    - cmake ..
+      -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE
       -D${UPPER_PROJECT_NAME}_BUILD_DOC:BOOL=ON
-    - cmake --build build_doc --target ${LOWER_PROJECT_NAME}_doc
+    - cmake --build . --target ${LOWER_PROJECT_NAME}_doc
   artifacts:
     paths:
       - build_doc/doc
