@@ -9,6 +9,7 @@
     "addoption",
     "alloc",
     "asan",
+    "asio",
     "ausan",
     "autobuild",
     "bugprone",

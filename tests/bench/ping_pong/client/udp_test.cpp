@@ -17,8 +17,8 @@
  * \file
  * \brief Benchmark of UDP.
  */
-#include <boost/asio/ip/udp.hpp>
-#include <boost/asio/registered_buffer.hpp>
+#include <asio/ip/udp.hpp>
+#include <asio/registered_buffer.hpp>
 #include <stat_bench/benchmark_macros.h>
 
 #include "../common.h"
@@ -33,19 +33,19 @@ STAT_BENCH_CASE_F(shm_stream_test::ping_pong_fixture, "ping_pong", "UDPv4") {
     const std::size_t data_size = data.size();
 
     const std::uint16_t server_port = shm_stream_test::udp_port();
-    const auto server_endpoint = boost::asio::ip::udp::endpoint(
-        boost::asio::ip::address_v4::loopback(), server_port);
+    const auto server_endpoint =
+        asio::ip::udp::endpoint(asio::ip::address_v4::loopback(), server_port);
 
-    boost::asio::io_context client_context{1};
-    boost::asio::ip::udp::socket client_socket{client_context};
+    asio::io_context client_context{1};
+    asio::ip::udp::socket client_socket{client_context};
     client_socket.connect(server_endpoint);
 
     std::vector<char> received_data(data_size);
 
     STAT_BENCH_MEASURE() {
-        client_socket.send(boost::asio::const_buffer(data.data(), data.size()));
+        client_socket.send(asio::const_buffer(data.data(), data.size()));
         client_socket.receive(
-            boost::asio::buffer(received_data.data(), received_data.size()));
+            asio::buffer(received_data.data(), received_data.size()));
     };
 }
 
@@ -57,18 +57,18 @@ STAT_BENCH_CASE_F(shm_stream_test::ping_pong_fixture, "ping_pong", "UDPv6") {
     const std::size_t data_size = data.size();
 
     const std::uint16_t server_port = shm_stream_test::udp_port();
-    const auto server_endpoint = boost::asio::ip::udp::endpoint(
-        boost::asio::ip::address_v6::loopback(), server_port);
+    const auto server_endpoint =
+        asio::ip::udp::endpoint(asio::ip::address_v6::loopback(), server_port);
 
-    boost::asio::io_context client_context{1};
-    boost::asio::ip::udp::socket client_socket{client_context};
+    asio::io_context client_context{1};
+    asio::ip::udp::socket client_socket{client_context};
     client_socket.connect(server_endpoint);
 
     std::vector<char> received_data(data_size);
 
     STAT_BENCH_MEASURE() {
-        client_socket.send(boost::asio::const_buffer(data.data(), data.size()));
+        client_socket.send(asio::const_buffer(data.data(), data.size()));
         client_socket.receive(
-            boost::asio::buffer(received_data.data(), received_data.size()));
+            asio::buffer(received_data.data(), received_data.size()));
     };
 }

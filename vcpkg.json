@@ -3,7 +3,7 @@
   "dependencies": [
     "boost-atomic",
     "boost-interprocess",
-    "boost-asio",
+    "asio",
     "fmt",
     "catch2",
     "cpp-stat-bench",
