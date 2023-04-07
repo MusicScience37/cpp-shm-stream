@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "boost-atomic",
+    "boost-interprocess",
+    "asio",
+    "fmt",
+    "catch2",
+    "cpp-stat-bench",
+    "rpclib"
+  ]
+}

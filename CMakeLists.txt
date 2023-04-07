@@ -40,26 +40,19 @@ set(CMAKE_POSITION_INDEPENDENT_CODE
     ON
     CACHE BOOL "Build position independent code.")
 
+include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/lib>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/lib>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-set(CONAN_COMPILER ${CONAN_SETTINGS_COMPILER})
-set(CONAN_COMPILER_VERSION ${CONAN_SETTINGS_COMPILER_VERSION})
-set(CONAN_LIBCXX ${CONAN_SETTINGS_COMPILER_LIBCXX})
-conan_basic_setup()
-
-# find packages installed with Conan
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS atomic)
 find_package(fmt REQUIRED)
 if(${UPPER_PROJECT_NAME}_TESTING)
     find_package(Catch2 REQUIRED)
-    find_package(cpp_stat_bench REQUIRED)
+    find_package(cpp-stat-bench REQUIRED)
     find_package(Threads REQUIRED)
     find_package(rpclib REQUIRED)
+    find_package(asio REQUIRED)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS

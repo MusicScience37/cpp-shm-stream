@@ -23,8 +23,8 @@
 #include <thread>
 #include <vector>
 
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/udp.hpp>
+#include <asio/io_context.hpp>
+#include <asio/ip/udp.hpp>
 
 #include "../common.h"
 #include "server_base.h"
@@ -81,13 +81,13 @@ private:
     void on_receive(std::size_t bytes_transferred);
 
     //! Context.
-    boost::asio::io_context context_{1};
+    asio::io_context context_{1};
 
     //! Socket.
-    boost::asio::ip::udp::socket socket_;
+    asio::ip::udp::socket socket_;
 
     //! Sender endpoint.
-    boost::asio::ip::udp::endpoint sender_endpoint_;
+    asio::ip::udp::endpoint sender_endpoint_;
 
     //! Buffer of data.
     std::vector<char> buffer_;
