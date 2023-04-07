@@ -3,7 +3,7 @@ add_executable(
     server/light_stream_server.cpp server/blocking_stream_server.cpp
     server/udp_server.cpp server/command_server.cpp server/main.cpp)
 target_link_libraries(bench_ping_pong_server PRIVATE ${PROJECT_NAME}
-                                                     rpclib::rpclib)
+                                                     rpclib::rpc)
 target_include_directories(bench_ping_pong_server
                            PRIVATE ${${UPPER_PROJECT_NAME}_TEST_INCLUDE_DIR})
 
@@ -13,7 +13,7 @@ add_executable(
     client/udp_test.cpp client/command_client.cpp client/main.cpp)
 target_link_libraries(
     bench_ping_pong_client PRIVATE ${PROJECT_NAME} cpp_stat_bench::stat_bench
-                                   rpclib::rpclib)
+                                   rpclib::rpc)
 target_include_directories(bench_ping_pong_client
                            PRIVATE ${${UPPER_PROJECT_NAME}_TEST_INCLUDE_DIR})
 
