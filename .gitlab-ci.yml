@@ -8,10 +8,7 @@ stages:
 variables:
   LOWER_PROJECT_NAME: "shm_stream"
   UPPER_PROJECT_NAME: "SHM_STREAM"
-  CONAN_PACKAGE_NAME: "cpp-shm-stream"
-  CONAN_USER: "MusicScience37"
   SECURE_LOG_LEVEL: debug
-  CPP_STAT_BENCH_CONAN_REGISTRY: "https://gitlab.com/api/v4/projects/32226502/packages/conan"
 
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
@@ -93,11 +90,9 @@ test release:
     matrix:
       - COMPILER_TYPE: ["gcc10"]
         IMAGE_PATH: "musicscience37/gcc-ci"
-        CONAN_LIBCXX: libstdc++11
         CXX_STANDARD: 14
       - COMPILER_TYPE: ["clang13"]
         IMAGE_PATH: "musicscience37/clang-ci"
-        CONAN_LIBCXX: libc++
         CXX_STANDARD: 14
   image: ${IMAGE_PATH}:${COMPILER_TYPE}
   variables:
@@ -106,7 +101,6 @@ test release:
     BUILD_DIR: build_${COMPILER_TYPE}_release
     CCACHE_DIR: ${CI_PROJECT_DIR}/.cache
     CCACHE_COMPILERCHECK: content
-    CONAN_USER_HOME: ${CI_PROJECT_DIR}
   before_script:
     - mkdir -p .venv
     - poetry config virtualenvs.in-project true
@@ -138,10 +132,8 @@ test release:
       prefix: cache-${CI_JOB_NAME}
       files:
         - poetry.lock
-        - conanfile.py
     paths:
       - .cache
-      - .conan
       - .venv
   artifacts:
     paths:
@@ -162,11 +154,9 @@ test debug:
     matrix:
       - COMPILER_TYPE: ["gcc10"]
         IMAGE_PATH: "musicscience37/gcc-ci"
-        CONAN_LIBCXX: libstdc++11
         CXX_STANDARD: 14
       - COMPILER_TYPE: ["clang13"]
         IMAGE_PATH: "musicscience37/clang-ci"
-        CONAN_LIBCXX: libc++
         CXX_STANDARD: 14
   variables:
     BUILD_TYPE: Debug
@@ -191,7 +181,6 @@ static analysis:
     matrix:
       - COMPILER_TYPE: "clang13"
         IMAGE_PATH: "musicscience37/clang-ci"
-        CONAN_LIBCXX: libc++
         CXX_STANDARD: 14
   variables:
     BUILD_TYPE: Debug
@@ -217,7 +206,6 @@ clang coverage:
     matrix:
       - COMPILER_TYPE: "clang13"
         IMAGE_PATH: "musicscience37/clang-ci"
-        CONAN_LIBCXX: libc++
         CXX_STANDARD: 14
   variables:
     BUILD_DIR: build_clang_coverage
@@ -262,7 +250,6 @@ clang-13-asan-ubsan:
     matrix:
       - COMPILER_TYPE: "clang13"
         IMAGE_PATH: "musicscience37/clang-ci"
-        CONAN_LIBCXX: libc++
         CXX_STANDARD: 14
   variables:
     BUILD_DIR: build_clang_asan_ubsan
@@ -288,7 +275,6 @@ doc:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     BUILD_TYPE: Release
-    CONAN_LIBCXX: libc++
     BUILD_DIR: build_doc
   before_script:
     - mkdir -p .venv
