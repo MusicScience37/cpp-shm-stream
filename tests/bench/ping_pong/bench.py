@@ -19,8 +19,10 @@ def bench(build_dir: pathlib.Path) -> None:
                 str(build_dir / "bin" / "bench_ping_pong_client"),
                 "--plot",
                 str(bench_results_dir),
-                "--json",
-                str(bench_results_dir / "result.json"),
+                "--msgpack",
+                str(bench_results_dir / "result.data"),
+                "--samples",
+                "10000",
             ],
             check=False,
         )

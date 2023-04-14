@@ -58,6 +58,7 @@
     "libshm",
     "libstdc",
     "maxdepth",
+    "msgpack",
     "msvc",
     "MusicScience37",
     "NOLINT",
