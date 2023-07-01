@@ -12,7 +12,6 @@ target:
         VCPKG_TARGET_TRIPLET: "x64-linux-llvm"
         VCPKG_HOST_TRIPLET: "x64-linux-llvm"
         CMAKE_CXX_FLAGS: "-stdlib=libc++"
-        CMAKE_C_FLAGS: "-stdlib=libc++"
 
 buildType:
   default: clang-asan-ubsan-unit-dox
