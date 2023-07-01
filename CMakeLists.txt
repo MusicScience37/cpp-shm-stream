@@ -51,7 +51,7 @@ if(${UPPER_PROJECT_NAME}_TESTING)
     find_package(Catch2 REQUIRED)
     find_package(cpp-stat-bench REQUIRED)
     find_package(Threads REQUIRED)
-    find_package(rpclib REQUIRED)
+    find_package(httplib REQUIRED)
     find_package(asio REQUIRED)
 endif()
 

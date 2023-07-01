@@ -20,16 +20,17 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 #include <unordered_map>
 
 #include "../common.h"
 #include "server_base.h"
 
-namespace rpc {
+namespace httplib {
 
-class server;
+class Server;
 
-}  // namespace rpc
+}  // namespace httplib
 
 namespace shm_stream_test {
 
@@ -66,7 +67,10 @@ private:
     void change_protocol(protocol_type protocol);
 
     //! Command server.
-    std::unique_ptr<rpc::server> command_server_{};
+    std::unique_ptr<httplib::Server> command_server_{};
+
+    //! Thread of the command server.
+    std::thread command_server_thread_{};
 
     //! Benchmark server.
     std::unordered_map<protocol_type, std::shared_ptr<server_base>>

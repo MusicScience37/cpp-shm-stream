@@ -20,8 +20,9 @@
 #include "command_server.h"
 
 #include <memory>
+#include <string>
 
-#include <rpc/server.h>
+#include <httplib.h>
 
 namespace shm_stream_test {
 
@@ -29,17 +30,25 @@ command_server::command_server(
     std::unordered_map<protocol_type, std::shared_ptr<server_base>>
         bench_server)
     : bench_server_(std::move(bench_server)) {
-    command_server_ =
-        std::make_unique<rpc::server>("127.0.0.1", command_port());
+    command_server_ = std::make_unique<httplib::Server>();
 
-    command_server_->bind("change_protocol", [this](int protocol_number) {
-        this->change_protocol(static_cast<protocol_type>(protocol_number));
-    });
+    command_server_->Post("/change_protocol",
+        [this](const httplib::Request& request, httplib::Response& response) {
+            const auto& body = request.body;
+            const int protocol_number = std::stoi(body);
+            this->change_protocol(static_cast<protocol_type>(protocol_number));
+        });
 
-    command_server_->async_run();
+    command_server_->new_task_queue = [] { return new httplib::ThreadPool(1); };
+
+    command_server_thread_ = std::thread(
+        [this] { this->command_server_->listen("127.0.0.1", command_port()); });
 }
 
-command_server::~command_server() { command_server_->stop(); }
+command_server::~command_server() {
+    command_server_->stop();
+    command_server_thread_.join();
+}
 
 void command_server::change_protocol(protocol_type protocol) {
     for (const auto& pair : bench_server_) {

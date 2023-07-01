@@ -23,11 +23,11 @@
 
 #include "../common.h"
 
-namespace rpc {
+namespace httplib {
 
-class client;
+class Client;
 
-}  // namespace rpc
+}  // namespace httplib
 
 namespace shm_stream_test {
 
@@ -60,7 +60,7 @@ public:
 
 private:
     //! Command client.
-    std::unique_ptr<rpc::client> command_client_{};
+    std::unique_ptr<httplib::Client> command_client_{};
 };
 
 }  // namespace shm_stream_test

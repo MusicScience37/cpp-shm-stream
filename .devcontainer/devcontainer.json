@@ -29,7 +29,8 @@
         "trond-snekvik.simple-rst",
         "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "ms-python.black-formatter"
       ],
       "settings": {
         "cmakeFormat.exePath": "/workspaces/cpp-shm-stream/.venv/bin/cmake-format",
