@@ -21,19 +21,21 @@
 
 #include <memory>
 
-#include <rpc/client.h>
+#include <fmt/format.h>
+#include <httplib.h>
 
 namespace shm_stream_test {
 
 command_client::command_client() {
-    command_client_ =
-        std::make_unique<rpc::client>("127.0.0.1", command_port());
+    command_client_ = std::make_unique<httplib::Client>(
+        fmt::format("http://localhost:{}", command_port()));
 }
 
 command_client::~command_client() = default;
 
 void command_client::change_protocol(protocol_type protocol) {
-    command_client_->call("change_protocol", static_cast<int>(protocol));
+    command_client_->Post("/change_protocol",
+        fmt::format("{}", static_cast<int>(protocol)), "text/plain");
 }
 
 }  // namespace shm_stream_test

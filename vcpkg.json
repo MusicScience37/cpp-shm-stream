@@ -7,6 +7,6 @@
     "fmt",
     "catch2",
     "cpp-stat-bench",
-    "rpclib"
+    "cpp-httplib"
   ]
 }
