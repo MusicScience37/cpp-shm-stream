@@ -1,10 +1,26 @@
-FROM registry.gitlab.com/musicscience37projects/docker/my-cpp-env-docker:clang15
+FROM registry.gitlab.com/musicscience37projects/docker/my-cpp-env-docker:clang16
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    # For vcpkg.
-    curl zip unzip tar \
+    openssh-client \
+    gnupg2 \
+    vim \
+    nano \
+    git-lfs \
+    sudo \
     && \
-    apt-get autoremove -y && \
+    apt-get autoremove && \
     apt-get autoclean && \
-    rm -r /var/lib/apt/lists/*
+    rm -r /var/lib/apt/lists/* && \
+    # Make ubuntu user able to use sudo command.
+    echo ubuntu ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/ubuntu && \
+    chmod 0440 /etc/sudoers.d/ubuntu && \
+    # Allow use of pyenv from ubuntu user.
+    chmod 0777 /root && \
+    chmod -R 0777 /root/.pyenv
+
+# Prepare poetry for ubuntu user.
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV PATH="/home/ubuntu/.local/bin:$PATH"
+RUN pipx install poetry
