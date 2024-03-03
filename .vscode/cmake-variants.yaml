@@ -14,7 +14,7 @@ target:
         CMAKE_CXX_FLAGS: "-stdlib=libc++"
 
 buildType:
-  default: clang-asan-ubsan-unit-dox
+  default: none
   choices:
     none:
       short: None

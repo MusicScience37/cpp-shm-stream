@@ -26,6 +26,7 @@
  * \brief Translate errors in C functions.
  */
 #define C_SHM_STREAM_TRANSLATE_ERROR(EXPRESSION)            \
+    /* NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while) */  \
     do {                                                    \
         try {                                               \
             EXPRESSION;                                     \
@@ -40,11 +41,12 @@
 /*!
  * \brief Ignore errors in C functions.
  */
-#define C_SHM_STREAM_NO_ERROR(EXPRESSION)  \
-    do {                                   \
-        try {                              \
-            EXPRESSION;                    \
-        } catch (...) {                    \
-            /* No operation for errors. */ \
-        }                                  \
+#define C_SHM_STREAM_NO_ERROR(EXPRESSION)                  \
+    /* NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while) */ \
+    do {                                                   \
+        try {                                              \
+            EXPRESSION;                                    \
+        } catch (...) {                                    \
+            /* No operation for errors. */                 \
+        }                                                  \
     } while (false)
