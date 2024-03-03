@@ -1,5 +1,11 @@
 {
   "build": { "dockerfile": "Dockerfile" },
+  "runArgs": [
+    // Configuration for GDB.
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
   "containerEnv": {
     "ASAN_OPTIONS": "alloc_dealloc_mismatch=0",
     "CCACHE_COMPILERCHECK": "content"
@@ -21,7 +27,10 @@
         "njpwerner.autodocstring",
         "lextudio.restructuredtext",
         "trond-snekvik.simple-rst",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "ms-python.black-formatter"
       ],
       "settings": {
         "cmakeFormat.exePath": "/workspaces/cpp-shm-stream/.venv/bin/cmake-format",

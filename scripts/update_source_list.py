@@ -6,7 +6,10 @@ import subprocess
 
 THIS_DIR = Path(__file__).parent.absolute()
 
-SOURCE_PATHS = [THIS_DIR.parent / "tests" / "units"]
+SOURCE_PATHS = [
+    THIS_DIR.parent / "src",
+    THIS_DIR.parent / "tests" / "units",
+]
 
 UNITY_SRC_SUFFIX = "unity_source.cpp"
 SOURCE_LIST_CMAKE_SUFFIX = "source_list.cmake"
@@ -25,7 +28,7 @@ def list_source_files(base_dir: Path) -> list[Path]:
     for child in base_dir.iterdir():
         if child.is_dir():
             files = files + list_source_files(child)
-        elif child.is_file() and str(child.suffix) == ".cpp":
+        elif child.is_file() and str(child.suffix) in [".c", ".cpp"]:
             files = files + [child]
     return files
 

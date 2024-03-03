@@ -1,13 +1,11 @@
 #!/bin/bash
 
 git config --global --add safe.directory $(pwd)
+git config --global --add safe.directory $(pwd)/vcpkg
 
 poetry config virtualenvs.in-project true
-poetry env use 3.10
+poetry env use 3.11
 poetry install
-
-poetry run conan profile new --force --detect default
-poetry run conan profile update settings.compiler.libcxx=libc++ default
 
 poetry run pre-commit install
 

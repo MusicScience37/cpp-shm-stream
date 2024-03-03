@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/Microsoft/vcpkg",
+    "baseline": "4a3c366f2d0d0eaf034bfa649124768df7cfe813"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://gitlab.com/MusicScience37Projects/vcpkg-registry",
+      "baseline": "f7fcc04f34f351a91796eaa0b386017e961a51b4",
+      "packages": ["cpp-stat-bench"]
+    }
+  ],
+  "overlay-triplets": ["./vcpkg_conf/triplets"]
+}

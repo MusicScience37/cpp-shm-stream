@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Kenta Kabashima.
+ * Copyright 2023 MusicScience37 (Kenta Kabashima)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 /*!
  * \file
- * \brief Dummy test.
+ * \brief Definition of main function.
  */
-#include <catch2/catch_test_macros.hpp>
+#include <stat_bench/benchmark_macros.h>
 
-TEST_CASE("dummy test") {
-    //
-}
+STAT_BENCH_MAIN

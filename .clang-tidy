@@ -7,6 +7,9 @@ Checks: >
     -cppcoreguidelines-owning-memory,
     -cppcoreguidelines-pro-bounds-constant-array-index,
     -cppcoreguidelines-avoid-non-const-global-variables,
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+    -cppcoreguidelines-macro-usage,
   google-*,
     -google-runtime-references,
     -google-readability-todo,
@@ -19,7 +22,13 @@ Checks: >
     -readability-suspicious-call-argument,
   modernize-*,
     -modernize-return-braced-init-list,
+    -modernize-use-trailing-return-type,
+    -modernize-use-default-member-init,
+    -modernize-use-using,
+    -modernize-deprecated-headers,
   hicpp-*,
+    -hicpp-no-array-decay,
+    -hicpp-deprecated-headers,
   cert-*,
     -cert-err58-cpp,
   bugprone-*,
@@ -39,6 +48,10 @@ Checks: >
 # - cert-err58-cpp produces warnings in all tests due to Catch2 library.
 # - cppcoreguidelines-avoid-non-const-global-variables produces warnings in all tests due to Catch2 library.
 # - readability-identifier-length prevent traditional codes.
+# - cppcoreguidelines-pro-bounds-array-to-pointer-decay, hicpp-no-array-decay produces warnings to assert macro in C++ standard.
+# - cppcoreguidelines-macro-usage produces false positives, but no true positives.
+# - modernize-use-default-member-init prevents hiding implementation details in .cpp files.
+# - modernize-use-using, modernize-deprecated-headers, and hicpp-deprecated-headers causes false positives in C interfaces.
 
 CheckOptions:
   # Naming Conventions
